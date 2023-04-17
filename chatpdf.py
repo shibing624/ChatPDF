@@ -141,5 +141,5 @@ if __name__ == "__main__":
     m = ChatPDF(pdf_path='sample_paper.pdf')
     response, _ = m.query('自然语言中的非平行迁移是指什么？')
     print(response)
-    response, _ = m.query('文章题目是啥？')
+    response, _ = m.query('本文讲了啥？')
     print(response)
