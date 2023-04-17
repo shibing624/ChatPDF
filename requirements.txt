@@ -1,0 +1,9 @@
+gradio
+similarities
+textgen
+markdown
+PyPDF2
+python-docx
+pandas
+protobuf
+cpm-kernels
