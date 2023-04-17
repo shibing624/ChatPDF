@@ -20,19 +20,22 @@ PROMPT_TEMPLATE = """\
 
 
 class ChatPDF:
-    def __init__(self, pdf_path: str, max_input_size: int = 1024):
-        if pdf_path.endswith('.pdf'):
-            corpus = self.extract_text_from_pdf(pdf_path)
-        elif pdf_path.endswith('.docx'):
-            corpus = self.extract_text_from_docx(pdf_path)
-        elif pdf_path.endswith('.md'):
-            corpus = self.extract_text_from_markdown(pdf_path)
+    def __init__(self, pdf_path: str = None, max_input_size: int = 1024, index_path: str = None):
+        self.sim_model = Similarity(model_name_or_path="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+        if index_path is not None:
+            self.load(index_path)
+        elif pdf_path is not None:
+            if pdf_path.endswith('.pdf'):
+                corpus = self.extract_text_from_pdf(pdf_path)
+            elif pdf_path.endswith('.docx'):
+                corpus = self.extract_text_from_docx(pdf_path)
+            elif pdf_path.endswith('.md'):
+                corpus = self.extract_text_from_markdown(pdf_path)
+            else:
+                corpus = self.extract_text_from_txt(pdf_path)
+            self.sim_model.add_corpus(corpus)
         else:
-            corpus = self.extract_text_from_txt(pdf_path)
-        self.sim_model = Similarity(
-            corpus,
-            model_name_or_path="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-        )
+            raise ValueError('pdf_path or index_path must be provided.')
         self.pdf_path = pdf_path
         self.max_input_size = max_input_size
         self.gen_model = ChatGlmModel("chatglm", "THUDM/chatglm-6b-int4")
