@@ -5,7 +5,7 @@
 """
 from loguru import logger
 from similarities import Similarity
-from textgen import ChatGlmModel
+from transformers import AutoModel, AutoTokenizer
 
 PROMPT_TEMPLATE = """\
 基于以下已知信息，简洁和专业的来回答用户的问题。
@@ -38,7 +38,8 @@ class ChatPDF:
             raise ValueError('pdf_path or index_path must be provided.')
         self.pdf_path = pdf_path
         self.max_input_size = max_input_size
-        self.gen_model = ChatGlmModel("chatglm", "THUDM/chatglm-6b-int4")
+        self.gen_model = AutoModel.from_pretrained("THUDM/chatglm-6b-int4", trust_remote_code=True).half().cuda()
+        self.gen_tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm-6b-int4", trust_remote_code=True)
         self.history = None
 
     @staticmethod
