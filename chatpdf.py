@@ -100,7 +100,7 @@ class ChatPDF:
         """Generate answer from query and context."""
         prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query_str)
         logger.debug(prompt)
-        response, out_history = self.gen_model.chat(prompt, history, max_length=max_length)
+        response, out_history = self.gen_model.chat(self.gen_tokenizer, prompt, history, max_length=max_length)
         logger.debug(response)
         return response, out_history
 
