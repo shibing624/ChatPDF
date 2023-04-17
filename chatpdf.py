@@ -104,7 +104,7 @@ class ChatPDF:
         logger.debug(response)
         return response, out_history
 
-    def query(self, query_str, topn=5):
+    def query(self, query_str, topn=5, use_history=False):
         """Query from corpus."""
         sim_contents = self.sim_model.most_similar(query_str, topn=topn)
         logger.debug(sim_contents)
@@ -117,8 +117,11 @@ class ChatPDF:
         reference_results = self.add_source_numbers(reference_results)
         logger.debug(reference_results)
         context_str = '\n'.join(reference_results)[:(self.max_input_size - len(PROMPT_TEMPLATE))]
-        response, out_history = self.generate_answer(query_str, context_str, self.history)
-        self.history = out_history
+        if use_history:
+            response, out_history = self.generate_answer(query_str, context_str, self.history)
+            self.history = out_history
+        else:
+            response, out_history = self.generate_answer(query_str, context_str)
         return response, reference_results
 
     def save(self, path=None):
@@ -136,5 +139,7 @@ class ChatPDF:
 
 if __name__ == "__main__":
     m = ChatPDF(pdf_path='sample_paper.pdf')
-    print(m.query('自然语言中的非平行迁移是指什么？'))
-    print(m.query('文章题目是啥？'))
+    response, _ = m.query('自然语言中的非平行迁移是指什么？')
+    print(response)
+    response, _ = m.query('文章题目是啥？')
+    print(response)
