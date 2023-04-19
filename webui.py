@@ -10,8 +10,8 @@ import shutil
 from loguru import logger
 from chatpdf import ChatPDF
 
-VECTOR_SEARCH_TOP_K = 6
-MAX_INPUT_LEN = 1024
+VECTOR_SEARCH_TOP_K = 3
+MAX_INPUT_LEN = 512
 
 embedding_model_dict = {
     "sentence-transformers": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
@@ -63,7 +63,8 @@ def get_answer(query, index_path, history):
     if index_path:
         if not model.sim_model.corpus_embeddings:
             model.load_index(index_path)
-        resp, history = model.query(query, topn=VECTOR_SEARCH_TOP_K, use_history=False)
+        response, history = model.query(query, topn=VECTOR_SEARCH_TOP_K)
+        history = history + [(query, response)]
     else:
         history = history + [[None, "请先加载文件后，再进行提问。"]]
     return history, ""
@@ -77,6 +78,8 @@ def update_status(history, status):
 
 def reinit_model(llm_model, embedding_model, history):
     try:
+        global model
+        del model
         model = ChatPDF(
             sim_model_name_or_path=embedding_model_dict.get(
                 embedding_model,
@@ -111,8 +114,10 @@ def get_vector_store(filepath, history):
         index_path = None
     return index_path, history + [[None, file_status]]
 
+
 def reset_chat(chatbot, state):
     return None, None
+
 
 block_css = """.importantButton {
     background: linear-gradient(45deg, #7e0570,#5d1c99, #6e00ff) !important;
