@@ -7,3 +7,4 @@ python-docx
 pandas
 protobuf
 cpm-kernels
+loguru

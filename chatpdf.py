@@ -5,7 +5,7 @@
 """
 from loguru import logger
 from similarities import Similarity
-from transformers import AutoModel, AutoTokenizer
+from textgen import ChatGlmModel, LlamaModel
 
 PROMPT_TEMPLATE = """\
 基于以下已知信息，简洁和专业的来回答用户的问题。
@@ -20,27 +20,37 @@ PROMPT_TEMPLATE = """\
 
 
 class ChatPDF:
-    def __init__(self, pdf_path: str = None, max_input_size: int = 1024, index_path: str = None):
-        self.sim_model = Similarity(model_name_or_path="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-        if index_path is not None:
-            self.load(index_path)
-        elif pdf_path is not None:
-            if pdf_path.endswith('.pdf'):
-                corpus = self.extract_text_from_pdf(pdf_path)
-            elif pdf_path.endswith('.docx'):
-                corpus = self.extract_text_from_docx(pdf_path)
-            elif pdf_path.endswith('.md'):
-                corpus = self.extract_text_from_markdown(pdf_path)
-            else:
-                corpus = self.extract_text_from_txt(pdf_path)
-            self.sim_model.add_corpus(corpus)
-        else:
-            raise ValueError('pdf_path or index_path must be provided.')
-        self.pdf_path = pdf_path
+    def __init__(
+            self,
+            sim_model_name_or_path: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+            gen_model_type: str = "chatglm",
+            gen_model_name_or_path: str = "THUDM/chatglm-6b-int4",
+            lora_model_name_or_path: str = None,
+            max_input_size: int = 1024,
+    ):
+        self.sim_model = Similarity(model_name_or_path=sim_model_name_or_path)
         self.max_input_size = max_input_size
-        self.gen_model = AutoModel.from_pretrained("THUDM/chatglm-6b-int4", trust_remote_code=True).half().cuda()
-        self.gen_tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm-6b-int4", trust_remote_code=True)
+        if gen_model_type == "chatglm":
+            self.gen_model = ChatGlmModel(gen_model_type, gen_model_name_or_path, lora_name=lora_model_name_or_path)
+        elif gen_model_type == "llama":
+            self.gen_model = LlamaModel(gen_model_type, gen_model_name_or_path, lora_name=lora_model_name_or_path)
+        else:
+            raise ValueError('gen_model_type must be chatglm or llama.')
         self.history = None
+        self.pdf_path = None
+
+    def load_pdf_file(self, pdf_path: str):
+        """Load a PDF file."""
+        if pdf_path.endswith('.pdf'):
+            corpus = self.extract_text_from_pdf(pdf_path)
+        elif pdf_path.endswith('.docx'):
+            corpus = self.extract_text_from_docx(pdf_path)
+        elif pdf_path.endswith('.md'):
+            corpus = self.extract_text_from_markdown(pdf_path)
+        else:
+            corpus = self.extract_text_from_txt(pdf_path)
+        self.sim_model.add_corpus(corpus)
+        self.pdf_path = pdf_path
 
     @staticmethod
     def extract_text_from_pdf(file_path: str):
@@ -92,19 +102,17 @@ class ChatPDF:
         return contents
 
     @staticmethod
-    def add_source_numbers(lst):
+    def _add_source_numbers(lst):
         """Add source numbers to a list of strings."""
         return [f'[{idx + 1}]\t "{item}"' for idx, item in enumerate(lst)]
 
-    def generate_answer(self, query_str, context_str, history=None, max_length=2048):
+    def _generate_answer(self, query_str, context_str, history=None, max_length=2048):
         """Generate answer from query and context."""
         prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query_str)
-        logger.debug(prompt)
-        response, out_history = self.gen_model.chat(self.gen_tokenizer, prompt, history, max_length=max_length)
-        logger.debug(response)
+        response, out_history = self.gen_model.chat(prompt, history, max_length=max_length)
         return response, out_history
 
-    def query(self, query_str, topn=5, use_history=False):
+    def query(self, query_str, topn=5, use_history=False, max_length=2048):
         """Query from corpus."""
         sim_contents = self.sim_model.most_similar(query_str, topn=topn)
         logger.debug(sim_contents)
@@ -114,31 +122,32 @@ class ChatPDF:
                 reference_results.append(self.sim_model.corpus[corpus_id])
         if not reference_results:
             return '没有提供足够的相关信息', reference_results
-        reference_results = self.add_source_numbers(reference_results)
+        reference_results = self._add_source_numbers(reference_results)
         logger.debug(reference_results)
         context_str = '\n'.join(reference_results)[:(self.max_input_size - len(PROMPT_TEMPLATE))]
         if use_history:
-            response, out_history = self.generate_answer(query_str, context_str, self.history)
+            response, out_history = self._generate_answer(query_str, context_str, self.history, max_length=max_length)
             self.history = out_history
         else:
-            response, out_history = self.generate_answer(query_str, context_str)
-        return response, reference_results
+            response, out_history = self._generate_answer(query_str, context_str)
+        return response, out_history
 
-    def save(self, path=None):
+    def save_index(self, index_path=None):
         """Save model."""
-        if path is None:
-            path = '.'.join(self.pdf_path.split('.')[:-1]) + '_index.json'
-        self.sim_model.save_index(path)
+        if index_path is None:
+            index_path = '.'.join(self.pdf_path.split('.')[:-1]) + '_index.json'
+        self.sim_model.save_index(index_path)
 
-    def load(self, path=None):
+    def load_index(self, index_path=None):
         """Load model."""
-        if path is None:
-            path = '.'.join(self.pdf_path.split('.')[:-1]) + '_index.json'
-        self.sim_model.load_index(path)
+        if index_path is None:
+            index_path = '.'.join(self.pdf_path.split('.')[:-1]) + '_index.json'
+        self.sim_model.load_index(index_path)
 
 
 if __name__ == "__main__":
-    m = ChatPDF(pdf_path='sample_paper.pdf')
+    m = ChatPDF()
+    m.load_pdf_file(pdf_path='sample.pdf')
     response, _ = m.query('自然语言中的非平行迁移是指什么？')
     print(response)
     response, _ = m.query('本文讲了啥？')
