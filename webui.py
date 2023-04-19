@@ -65,7 +65,6 @@ def get_answer(query, index_path, history):
         if not model.sim_model.corpus_embeddings:
             model.load_index(index_path)
         response, history = model.query(query, topn=VECTOR_SEARCH_TOP_K)
-        history = history + [(query, response)]
     else:
         history = history + [[None, "请先加载文件后，再进行提问。"]]
     return history, ""

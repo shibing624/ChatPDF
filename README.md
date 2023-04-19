@@ -43,7 +43,7 @@ pip install -r requirements.txt
 
 请使用下面的命令。取决于你的系统，你可能需要用python或者python3命令。请确保你已经安装了Python。
 ```shell
-python ChatPDF.py
+python chatpdf.py
 ```
 
 如果一切顺利，现在，你应该已经可以在浏览器地址栏中输入 http://localhost:7860 查看并使用 ChatPDF 了。
