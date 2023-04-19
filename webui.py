@@ -44,7 +44,8 @@ model = ChatPDF(
 def get_file_list():
     if not os.path.exists("content"):
         return []
-    return [f for f in os.listdir("content")]
+    return [f for f in os.listdir("content") if
+            f.endswith(".txt") or f.endswith(".pdf") or f.endswith(".docx") or f.endswith(".md")]
 
 
 file_list = get_file_list()
