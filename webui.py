@@ -2,7 +2,7 @@
 """
 @author:XuMing(xuming624@qq.com)
 @description:
-modified from https://github.com/shibing624/ChatPDF/blob/master/webui.py
+modified from https://github.com/imClumsyPanda/langchain-ChatGLM/blob/master/webui.py
 """
 import gradio as gr
 import os

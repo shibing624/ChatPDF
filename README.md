@@ -13,20 +13,20 @@
         <img alt="GitHub Contributors" src="https://img.shields.io/badge/Base-Gradio-fb7d1a?style=flat" />
       </a>
       <p>
-        根据文件回答 / 开源模型 / 支持本地部署LLM
+        根据文件回答 / 开源模型 / 本地部署LLM
       </p>
       <a href="https://huggingface.co/spaces/shibing624/ChatPDF"><strong>在线体验</strong></a>
       	·
       <a href="https://huggingface.co/login?next=%2Fspaces%2Fshibing624%2FChatPDF%3Fduplicate%3Dtrue"><strong>一键部署</strong></a>
     </p>
     <p align="center">
-      <img alt="Animation Demo" src="https://user-images.githubusercontent.com/51039745/226255695-6b17ff1f-ea8d-464f-b69b-a7b6b68fffe8.gif" />
+      <img alt="Animation Demo" src="https://github.com/shibing624/ChatPDF/blob/main/img.jpg" />
     </p>
   </p>
 </div>
 
 
-## 安装方式、使用方式
+## 使用说明
 
 #### 安装依赖
 
@@ -49,3 +49,27 @@ python chatpdf.py
 如果一切顺利，现在，你应该已经可以在浏览器地址栏中输入 http://localhost:7860 查看并使用 ChatPDF 了。
 如果您已经有下载好的本地模型了，设置`model_name_or_path`为对应的模型文件夹即可。
 
+
+## Contact
+
+- Issue(建议)：[![GitHub issues](https://img.shields.io/github/issues/shibing624/ChatPDF.svg)](https://github.com/shibing624/ChatPDF/issues)
+- 邮件我：xuming: xuming624@qq.com
+- 微信我：加我*微信号：xuming624, 备注：姓名-公司-NLP* 进NLP交流群。
+
+
+## License
+
+
+授权协议为 [The Apache License 2.0](LICENSE)，可免费用做商业用途。请在产品说明中附加text2vec的链接和授权协议。
+
+
+## Contribute
+项目代码还很粗糙，如果大家对代码有所改进，欢迎提交回本项目，在提交之前，注意以下两点：
+
+ - 在`tests`添加相应的单元测试
+ - 使用`python -m pytest -v`来运行所有单元测试，确保所有单测都是通过的
+
+之后即可提交PR。
+
+## Reference
+- [imClumsyPanda/langchain-ChatGLM](https://github.com/imClumsyPanda/langchain-ChatGLM)
