@@ -109,19 +109,22 @@ def reinit_model(llm_model, embedding_model, history):
 
 def get_vector_store(filepath, history):
     logger.info(filepath, history)
+    index_path = None
+    file_status = ''
     if model is not None:
         local_file_path = os.path.join(CONTENT_DIR, filepath)
         local_index_path = os.path.join(CONTENT_DIR, filepath + ".index.json")
-        model.load_pdf_file(local_file_path)
-        model.save_index(local_index_path)
-        index_path = local_index_path
-        if index_path:
-            file_status = "文件已成功加载，请开始提问"
-        else:
-            file_status = "文件未成功加载，请重新上传文件"
+        if os.path.exists(local_file_path):
+            model.load_pdf_file(local_file_path)
+            model.save_index(local_index_path)
+            index_path = local_index_path
+            if index_path:
+                file_status = "文件已成功加载，请开始提问"
+            else:
+                file_status = "文件未成功加载，请重新上传文件"
     else:
         file_status = "模型未完成加载，请先在加载模型后再导入文件"
-        index_path = None
+
     return index_path, history + [[None, file_status]]
 
 
@@ -133,22 +136,17 @@ block_css = """.importantButton {
     background: linear-gradient(45deg, #7e0570,#5d1c99, #6e00ff) !important;
     border: none !important;
 }
-
 .importantButton:hover {
     background: linear-gradient(45deg, #ff00e0,#8500ff, #6e00ff) !important;
     border: none !important;
 }"""
 
 webui_title = """
-# 🎉ChatPDF WebUI🎉
-
+# 🎉ChatPDF WebUI🎉 (基于CPU生成，约2min一条)
 Link in: [https://github.com/shibing624/ChatPDF](https://github.com/shibing624/ChatPDF)
-
 """
 
-init_message = """欢迎使用 ChatPDF Web UI，开始提问前，请依次如下 2 个步骤：
-1. 上传或选择已有文件作为本地知识文档输入后点击"加载文档"，并等待加载完成提示
-2. 输入要提交的问题后，点击回车提交 """
+init_message = """欢迎使用 ChatPDF Web UI，可以直接提问或上传文件后提问 """
 
 with gr.Blocks(css=block_css) as demo:
     index_path, file_status, model_status = gr.State(""), gr.State(""), gr.State("")
@@ -208,4 +206,5 @@ with gr.Blocks(css=block_css) as demo:
     clear_btn.click(reset_chat, [chatbot, query], [chatbot, query])
 
 demo.queue(concurrency_count=3).launch(
-    server_name='0.0.0.0', share=False, inbrowser=False)
+    server_name='0.0.0.0', share=False, inbrowser=False
+)
