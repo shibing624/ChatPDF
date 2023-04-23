@@ -10,6 +10,10 @@ import shutil
 from loguru import logger
 from chatpdf import ChatPDF
 
+pwd_path = os.path.abspath(os.path.dirname(__file__))
+
+CONTENT_DIR = os.path.join(pwd_path, "content")
+logger.info(f"CONTENT_DIR: {CONTENT_DIR}")
 VECTOR_SEARCH_TOP_K = 3
 MAX_INPUT_LEN = 512
 
@@ -52,9 +56,10 @@ file_list = get_file_list()
 
 
 def upload_file(file):
-    os.makedirs("content", exist_ok=True)
+    if not os.path.exists(CONTENT_DIR):
+        os.mkdir(CONTENT_DIR)
     filename = os.path.basename(file.name)
-    shutil.move(file.name, "content/" + filename)
+    shutil.move(file.name, os.path.join(CONTENT_DIR, filename))
     # file_list首位插入新上传的文件
     file_list.insert(0, filename)
     return gr.Dropdown.update(choices=file_list, value=filename)
@@ -64,9 +69,14 @@ def get_answer(query, index_path, history):
     if index_path:
         if not model.sim_model.corpus_embeddings:
             model.load_index(index_path)
-        response, history = model.query(query, topn=VECTOR_SEARCH_TOP_K)
+        response, empty_history = model.query(query, topn=VECTOR_SEARCH_TOP_K)
+        history = history + [[query, response]]
     else:
-        history = history + [[None, "请先加载文件后，再进行提问。"]]
+        # history = history + [[None, "请先加载文件后，再进行提问。"]]
+        # 未加载文件，仅返回生成模型结果
+        response, empty_history = model.gen_model.chat(query)
+        history = history + [[query, response]]
+    logger.debug(f"query: {query}, response: {response}")
     return history, ""
 
 
@@ -100,8 +110,8 @@ def reinit_model(llm_model, embedding_model, history):
 def get_vector_store(filepath, history):
     logger.info(filepath, history)
     if model is not None:
-        local_file_path = "content/" + filepath
-        local_index_path = "content/" + filepath + ".index.json"
+        local_file_path = os.path.join(CONTENT_DIR, filepath)
+        local_index_path = os.path.join(CONTENT_DIR, filepath + ".index.json")
         model.load_pdf_file(local_file_path)
         model.save_index(local_index_path)
         index_path = local_index_path
@@ -136,10 +146,9 @@ Link in: [https://github.com/shibing624/ChatPDF](https://github.com/shibing624/C
 
 """
 
-init_message = """欢迎使用 ChatPDF Web UI，开始提问前，请依次如下 3 个步骤：
-1. 选择语言模型、Embedding 模型及相关参数后点击"重新加载模型"，并等待加载完成提示
-2. 上传或选择已有文件作为本地知识文档输入后点击"重新加载文档"，并等待加载完成提示
-3. 输入要提交的问题后，点击回车提交 """
+init_message = """欢迎使用 ChatPDF Web UI，开始提问前，请依次如下 2 个步骤：
+1. 上传或选择已有文件作为本地知识文档输入后点击"加载文档"，并等待加载完成提示
+2. 输入要提交的问题后，点击回车提交 """
 
 with gr.Blocks(css=block_css) as demo:
     index_path, file_status, model_status = gr.State(""), gr.State(""), gr.State("")

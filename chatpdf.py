@@ -106,13 +106,13 @@ class ChatPDF:
         """Add source numbers to a list of strings."""
         return [f'[{idx + 1}]\t "{item}"' for idx, item in enumerate(lst)]
 
-    def _generate_answer(self, query_str, context_str, history=None, max_length=2048):
+    def _generate_answer(self, query_str, context_str, history=None, max_length=1024):
         """Generate answer from query and context."""
         prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query_str)
         response, out_history = self.gen_model.chat(prompt, history, max_length=max_length)
         return response, out_history
 
-    def query(self, query_str, topn=5, use_history=False, max_length=2048):
+    def query(self, query_str, topn=5, use_history=False, max_length=1024):
         """Query from corpus."""
         sim_contents = self.sim_model.most_similar(query_str, topn=topn)
         logger.debug(sim_contents)
@@ -150,5 +150,5 @@ if __name__ == "__main__":
     m.load_pdf_file(pdf_path='sample.pdf')
     response, _ = m.query('自然语言中的非平行迁移是指什么？')
     print(response)
-    response, _ = m.query('本文讲了啥？')
+    response, _ = m.query('本文作者是谁？')
     print(response)
