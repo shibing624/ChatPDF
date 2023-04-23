@@ -142,8 +142,8 @@ block_css = """.importantButton {
 }"""
 
 webui_title = """
-# 🎉ChatPDF WebUI🎉 (基于CPU生成，约2min一条)
-Link in: [https://github.com/shibing624/ChatPDF](https://github.com/shibing624/ChatPDF)
+# 🎉ChatPDF WebUI🎉
+Link in: [https://github.com/shibing624/ChatPDF](https://github.com/shibing624/ChatPDF)  PS: 2核CPU 16G内存机器，约2min一条😭
 """
 
 init_message = """欢迎使用 ChatPDF Web UI，可以直接提问或上传文件后提问 """
