@@ -130,7 +130,7 @@ class ChatPDF:
             self.history = out_history
         else:
             response, out_history = self._generate_answer(query_str, context_str)
-        return response, out_history
+        return response, out_history,reference_results
 
     def save_index(self, index_path=None):
         """Save model."""

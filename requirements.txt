@@ -1,5 +1,5 @@
 gradio
-similarities
+similarities>=1.0.5
 sentencepiece
 textgen
 markdown
