@@ -62,6 +62,7 @@ def upload_file(file):
     return gr.Dropdown.update(choices=file_list, value=filename)
 
 
+
 def parse_text(text):
     """copy from https://github.com/GaiZhenbiao/ChuanhuChatGPT/"""
     lines = text.split("\n")
@@ -102,6 +103,7 @@ def get_answer(query, index_path, history, topn=VECTOR_SEARCH_TOP_K, max_input_s
         if not model.sim_model.corpus_embeddings:
             model.load_index(index_path)
         response, empty_history, reference_results = model.query(query=query, topn=topn, max_input_size=max_input_size)
+
         logger.debug(f"query: {query}, response with content: {response}")
         for i in range(len(reference_results)):
             r = reference_results[i]
@@ -109,7 +111,6 @@ def get_answer(query, index_path, history, topn=VECTOR_SEARCH_TOP_K, max_input_s
         response = parse_text(response)
         history = history + [[query, response]]
     else:
-        # history = history + [[None, "请先加载文件后，再进行提问。"]]
         # 未加载文件，仅返回生成模型结果
         response, empty_history = model.gen_model.chat(query)
         response = parse_text(response)

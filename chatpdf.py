@@ -3,7 +3,6 @@
 @author:XuMing(xuming624@qq.com)
 @description: 
 """
-from loguru import logger
 from similarities import Similarity
 from textgen import ChatGlmModel, LlamaModel
 
@@ -121,8 +120,9 @@ class ChatPDF:
             use_history: bool = False
     ):
         """Query from corpus."""
+
         sim_contents = self.sim_model.most_similar(query, topn=topn)
-        logger.debug(sim_contents)
+
         reference_results = []
         for query_id, id_score_dict in sim_contents.items():
             for corpus_id, s in id_score_dict.items():
@@ -130,13 +130,16 @@ class ChatPDF:
         if not reference_results:
             return '没有提供足够的相关信息', reference_results
         reference_results = self._add_source_numbers(reference_results)
-        logger.debug(reference_results)
+
         context_str = '\n'.join(reference_results)[:(max_input_size - len(PROMPT_TEMPLATE))]
+
         if use_history:
             response, out_history = self._generate_answer(query, context_str, self.history, max_length=max_length)
             self.history = out_history
         else:
+
             response, out_history = self._generate_answer(query, context_str)
+
         return response, out_history, reference_results
 
     def save_index(self, index_path=None):
@@ -153,9 +156,16 @@ class ChatPDF:
 
 
 if __name__ == "__main__":
-    m = ChatPDF()
+    import sys
+
+    if len(sys.argv) > 2:
+        gen_model_name_or_path = sys.argv[1]
+    else:
+        print('Usage: python chatpdf.py <gen_model_name_or_path>')
+        gen_model_name_or_path = "THUDM/chatglm-6b-int4"
+    m = ChatPDF(gen_model_name_or_path=gen_model_name_or_path)
     m.load_pdf_file(pdf_path='sample.pdf')
-    response, _ = m.query('自然语言中的非平行迁移是指什么？')
-    print(response)
-    response, _ = m.query('本文作者是谁？')
-    print(response)
+    response = m.query('自然语言中的非平行迁移是指什么？')
+    print(response[0])
+    response = m.query('本文作者是谁？')
+    print(response[0])
