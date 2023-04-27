@@ -65,11 +65,11 @@ def upload_file(file):
     return gr.Dropdown.update(choices=file_list, value=filename)
 
 
-def get_answer(query, index_path, history,topn=VECTOR_SEARCH_TOP_K):
+def get_answer(query, index_path, history, topn=VECTOR_SEARCH_TOP_K):
     if index_path:
         if not model.sim_model.corpus_embeddings:
             model.load_index(index_path)
-        response, empty_history,reference_results = model.query(query, topn=topn)
+        response, empty_history, reference_results = model.query(query, topn=topn)
         logger.debug(f"query: {query}, response with content: {response}")
         for i in range(len(reference_results)):
             r = reference_results[i]
@@ -77,7 +77,6 @@ def get_answer(query, index_path, history,topn=VECTOR_SEARCH_TOP_K):
 
         history = history + [[query, response]]
     else:
-        # history = history + [[None, "请先加载文件后，再进行提问。"]]
         # 未加载文件，仅返回生成模型结果
         response, empty_history = model.gen_model.chat(query)
         history = history + [[query, response]]
@@ -174,7 +173,7 @@ with gr.Blocks(css=block_css) as demo:
                                        label="Embedding 模型",
                                        value=embedding_model_dict_list[0],
                                        interactive=True)
-            topn = gr.Slider(1,100,6,step=1,label="Top search 最大搜索数量")
+            topn = gr.Slider(1, 100, 6, step=1, label="Top search 最大搜索数量")
             load_model_button = gr.Button("重新加载模型")
 
             with gr.Tab("select"):

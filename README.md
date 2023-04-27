@@ -39,15 +39,20 @@ pip install -r requirements.txt
 
 如果下载慢，建议配置豆瓣源。
 
-#### 启动
+#### 本地调用
 
 请使用下面的命令。取决于你的系统，你可能需要用python或者python3命令。请确保你已经安装了Python。
 ```shell
 python chatpdf.py
 ```
 
+#### 启动Web服务
+
+```shell
+python webui.py
+```
+
 如果一切顺利，现在，你应该已经可以在浏览器地址栏中输入 http://localhost:7860 查看并使用 ChatPDF 了。
-如果您已经有下载好的本地模型了，设置`model_name_or_path`为对应的模型文件夹即可。
 
 
 ## Contact
