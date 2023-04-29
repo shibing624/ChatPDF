@@ -25,10 +25,10 @@ class ChatPDF:
             gen_model_type: str = "chatglm",
             gen_model_name_or_path: str = "THUDM/chatglm-6b-int4",
             lora_model_name_or_path: str = None,
-            max_input_size: int = 1024,
+
     ):
         self.sim_model = Similarity(model_name_or_path=sim_model_name_or_path)
-        self.max_input_size = max_input_size
+
         if gen_model_type == "chatglm":
             self.gen_model = ChatGlmModel(gen_model_type, gen_model_name_or_path, lora_name=lora_model_name_or_path)
         elif gen_model_type == "llama":
@@ -111,10 +111,18 @@ class ChatPDF:
         response, out_history = self.gen_model.chat(prompt, history, max_length=max_length)
         return response, out_history
 
-    def query(self, query_str, topn=5, use_history=False, max_length=1024):
+    def query(
+            self,
+            query,
+            topn: int = 5,
+            max_length: int = 1024,
+            max_input_size: int = 1024,
+            use_history: bool = False
+    ):
         """Query from corpus."""
-        sim_contents = self.sim_model.most_similar(query_str, topn=topn)
-        # logger.debug(sim_contents)
+
+        sim_contents = self.sim_model.most_similar(query, topn=topn)
+
         reference_results = []
         for query_id, id_score_dict in sim_contents.items():
             for corpus_id, s in id_score_dict.items():
@@ -122,13 +130,16 @@ class ChatPDF:
         if not reference_results:
             return '没有提供足够的相关信息', reference_results
         reference_results = self._add_source_numbers(reference_results)
-        # logger.debug(reference_results)
-        context_str = '\n'.join(reference_results)[:(self.max_input_size - len(PROMPT_TEMPLATE))]
+
+        context_str = '\n'.join(reference_results)[:(max_input_size - len(PROMPT_TEMPLATE))]
+
         if use_history:
-            response, out_history = self._generate_answer(query_str, context_str, self.history, max_length=max_length)
+            response, out_history = self._generate_answer(query, context_str, self.history, max_length=max_length)
             self.history = out_history
         else:
-            response, out_history = self._generate_answer(query_str, context_str)
+
+            response, out_history = self._generate_answer(query, context_str)
+
         return response, out_history, reference_results
 
     def save_index(self, index_path=None):
