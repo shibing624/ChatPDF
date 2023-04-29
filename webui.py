@@ -29,9 +29,9 @@ embedding_model_dict = {
 
 # supported LLM models
 llm_model_dict = {
-    "chatglm-6b": "THUDM/chatglm-6b",
     "chatglm-6b-int4": "THUDM/chatglm-6b-int4",
     "chatglm-6b-int4-qe": "THUDM/chatglm-6b-int4-qe",
+    "chatglm-6b": "THUDM/chatglm-6b",
     "llama-7b": "decapoda-research/llama-7b-hf",
     "llama-13b": "decapoda-research/llama-13b-hf",
 }
@@ -60,7 +60,6 @@ def upload_file(file):
     # file_list首位插入新上传的文件
     file_list.insert(0, filename)
     return gr.Dropdown.update(choices=file_list, value=filename)
-
 
 
 def parse_text(text):
@@ -235,7 +234,7 @@ with gr.Blocks(css=block_css) as demo:
             load_model_button = gr.Button("重新加载模型")
 
             with gr.Row():
-                only_chat = gr.Checkbox(False, label="不加载文本(纯聊天)")
+                only_chat = gr.Checkbox(False, label="不加载文件(纯聊天)")
 
             with gr.Row():
                 topn = gr.Slider(1, 100, 20, step=1, label="最大搜索数量")
