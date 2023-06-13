@@ -32,8 +32,8 @@ llm_model_dict = {
     "chatglm-6b-int4": "THUDM/chatglm-6b-int4",
     "chatglm-6b-int4-qe": "THUDM/chatglm-6b-int4-qe",
     "chatglm-6b": "THUDM/chatglm-6b",
-    "llama-7b": "decapoda-research/llama-7b-hf",
-    "llama-13b": "decapoda-research/llama-13b-hf",
+    "llama-7b": "shibing624/chinese-alpaca-plus-7b-hf",
+    "llama-13b": "shibing624/chinese-alpaca-plus-13b-hf",
 }
 
 llm_model_dict_list = list(llm_model_dict.keys())
