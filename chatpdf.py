@@ -3,8 +3,10 @@
 @author:XuMing(xuming624@qq.com)
 @description: 
 """
+from typing import Union, List
+
 from similarities import Similarity
-from textgen import ChatGlmModel, LlamaModel
+from textgen import ChatGlmModel, GptModel
 
 PROMPT_TEMPLATE = """\
 基于以下已知信息，简洁和专业的来回答用户的问题。
@@ -21,7 +23,7 @@ PROMPT_TEMPLATE = """\
 class ChatPDF:
     def __init__(
             self,
-            sim_model_name_or_path: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+            sim_model_name_or_path: str = "shibing624/text2vec-base-multilingual",
             gen_model_type: str = "chatglm",
             gen_model_name_or_path: str = "THUDM/chatglm-6b-int4",
             lora_model_name_or_path: str = None,
@@ -31,25 +33,26 @@ class ChatPDF:
 
         if gen_model_type == "chatglm":
             self.gen_model = ChatGlmModel(gen_model_type, gen_model_name_or_path, peft_name=lora_model_name_or_path)
-        elif gen_model_type == "llama":
-            self.gen_model = LlamaModel(gen_model_type, gen_model_name_or_path, peft_name=lora_model_name_or_path)
         else:
-            raise ValueError('gen_model_type must be chatglm or llama.')
+            self.gen_model = GptModel(gen_model_type, gen_model_name_or_path, peft_name=lora_model_name_or_path)
         self.history = None
-        self.pdf_path = None
+        self.doc_files = None
 
-    def load_pdf_file(self, pdf_path: str):
-        """Load a PDF file."""
-        if pdf_path.endswith('.pdf'):
-            corpus = self.extract_text_from_pdf(pdf_path)
-        elif pdf_path.endswith('.docx'):
-            corpus = self.extract_text_from_docx(pdf_path)
-        elif pdf_path.endswith('.md'):
-            corpus = self.extract_text_from_markdown(pdf_path)
-        else:
-            corpus = self.extract_text_from_txt(pdf_path)
-        self.sim_model.add_corpus(corpus)
-        self.pdf_path = pdf_path
+    def load_doc_files(self, doc_files: Union[str, List[str]]):
+        """Load document files."""
+        if isinstance(doc_files, str):
+            doc_files = [doc_files]
+        for doc_file in doc_files:
+            if doc_file.endswith('.pdf'):
+                corpus = self.extract_text_from_pdf(doc_file)
+            elif doc_file.endswith('.docx'):
+                corpus = self.extract_text_from_docx(doc_file)
+            elif doc_file.endswith('.md'):
+                corpus = self.extract_text_from_markdown(doc_file)
+            else:
+                corpus = self.extract_text_from_txt(doc_file)
+            self.sim_model.add_corpus(corpus)
+        self.doc_files = doc_files
 
     @staticmethod
     def extract_text_from_pdf(file_path: str):
@@ -105,7 +108,7 @@ class ChatPDF:
         """Add source numbers to a list of strings."""
         return [f'[{idx + 1}]\t "{item}"' for idx, item in enumerate(lst)]
 
-    def _generate_answer(self, query_str, context_str, history=None, max_length=1024):
+    def _generate_answer(self, query_str: str, context_str: str, history=None, max_length=1024):
         """Generate answer from query and context."""
         prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query_str)
         response, out_history = self.gen_model.chat(prompt, history, max_length=max_length)
@@ -113,7 +116,7 @@ class ChatPDF:
 
     def query(
             self,
-            query,
+            query: str,
             topn: int = 5,
             max_length: int = 1024,
             max_input_size: int = 1024,
@@ -145,13 +148,13 @@ class ChatPDF:
     def save_index(self, index_path=None):
         """Save model."""
         if index_path is None:
-            index_path = '.'.join(self.pdf_path.split('.')[:-1]) + '_index.json'
+            index_path = '.'.join(self.doc_files.split('.')[:-1]) + '_index.json'
         self.sim_model.save_index(index_path)
 
     def load_index(self, index_path=None):
         """Load model."""
         if index_path is None:
-            index_path = '.'.join(self.pdf_path.split('.')[:-1]) + '_index.json'
+            index_path = '.'.join(self.doc_files.split('.')[:-1]) + '_index.json'
         self.sim_model.load_index(index_path)
 
 
@@ -162,9 +165,9 @@ if __name__ == "__main__":
         gen_model_name_or_path = sys.argv[1]
     else:
         print('Usage: python chatpdf.py <gen_model_name_or_path>')
-        gen_model_name_or_path = "THUDM/chatglm-6b-int4"
+        gen_model_name_or_path = "THUDM/chatglm2-6b-int4"
     m = ChatPDF(gen_model_name_or_path=gen_model_name_or_path)
-    m.load_pdf_file(pdf_path='sample.pdf')
+    m.load_doc_files(doc_files='sample.pdf')
     response = m.query('自然语言中的非平行迁移是指什么？')
     print(response[0])
     response = m.query('本文作者是谁？')

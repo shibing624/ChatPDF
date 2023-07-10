@@ -4,12 +4,14 @@
 @description:
 modified from https://github.com/imClumsyPanda/langchain-ChatGLM/blob/master/webui.py
 """
-import gradio as gr
+import hashlib
 import os
 import shutil
+
+import gradio as gr
 from loguru import logger
+
 from chatpdf import ChatPDF
-import hashlib
 
 pwd_path = os.path.abspath(os.path.dirname(__file__))
 
@@ -29,6 +31,7 @@ embedding_model_dict = {
 
 # supported LLM models
 llm_model_dict = {
+    "chatglm2-6b-int4": "THUDM/chatglm2-6b-int4",
     "chatglm-6b-int4": "THUDM/chatglm-6b-int4",
     "chatglm-6b-int4-qe": "THUDM/chatglm-6b-int4-qe",
     "chatglm-6b": "THUDM/chatglm-6b",
@@ -132,10 +135,10 @@ def reinit_model(llm_model, embedding_model, history):
         model = ChatPDF(
             sim_model_name_or_path=embedding_model_dict.get(
                 embedding_model,
-                "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+                "shibing624/text2vec-base-multilingual"
             ),
             gen_model_type=llm_model.split('-')[0],
-            gen_model_name_or_path=llm_model_dict.get(llm_model, "THUDM/chatglm-6b-int4"),
+            gen_model_name_or_path=llm_model_dict.get(llm_model, "THUDM/chatglm2-6b-int4"),
             lora_model_name_or_path=None,
         )
 
