@@ -21,6 +21,7 @@ VECTOR_SEARCH_TOP_K = 3
 MAX_INPUT_LEN = 2048
 
 embedding_model_dict = {
+    "text2vec-multilingual": "shibing624/text2vec-base-multilingual",
     "text2vec-large": "GanymedeNil/text2vec-large-chinese",
     "text2vec-base": "shibing624/text2vec-base-chinese",
     "sentence-transformers": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
