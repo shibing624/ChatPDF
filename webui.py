@@ -27,7 +27,6 @@ embedding_model_dict = {
     "sentence-transformers": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
     "ernie-tiny": "nghuyong/ernie-3.0-nano-zh",
     "ernie-base": "nghuyong/ernie-3.0-base-zh",
-
 }
 
 # supported LLM models
@@ -174,7 +173,7 @@ def get_vector_store(filepath, history, embedding_model):
             file_status = "文件已成功加载，请开始提问"
 
         elif os.path.exists(local_file_path):
-            model.load_pdf_file(local_file_path)
+            model.load_doc_files(local_file_path)
             model.save_index(local_index_path)
             index_path = local_index_path
             if index_path:
