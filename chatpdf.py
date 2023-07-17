@@ -161,7 +161,7 @@ class ChatPDF:
 if __name__ == "__main__":
     import sys
 
-    if len(sys.argv) > 2:
+    if len(sys.argv) >= 2:
         gen_model_name_or_path = sys.argv[1]
     else:
         print('Usage: python chatpdf.py <gen_model_name_or_path>')
