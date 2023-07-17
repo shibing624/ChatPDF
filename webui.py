@@ -13,6 +13,13 @@ from loguru import logger
 
 from chatpdf import ChatPDF
 
+import torch
+if torch.backends.mps.is_available():
+    CHATGLM2_6B =os.getenv("CHATGLM2_6B","./chatglm2-6b/")
+else:
+    CHATGLM2_6B = "THUDM/chatglm2-6b"
+
+
 pwd_path = os.path.abspath(os.path.dirname(__file__))
 
 CONTENT_DIR = os.path.join(pwd_path, "content")
@@ -30,7 +37,10 @@ embedding_model_dict = {
 }
 
 # supported LLM models
+
+
 llm_model_dict = {
+    "chatglm2-6b": CHATGLM2_6B,
     "chatglm2-6b-int4": "THUDM/chatglm2-6b-int4",
     "chatglm-6b-int4": "THUDM/chatglm-6b-int4",
     "chatglm-6b-int4-qe": "THUDM/chatglm-6b-int4-qe",
@@ -137,7 +147,8 @@ def reinit_model(llm_model, embedding_model, history):
                 embedding_model,
                 "shibing624/text2vec-base-multilingual"
             ),
-            gen_model_type=llm_model.split('-')[0],
+            # gen_model_type=llm_model.split('-')[0],
+            gen_model_type='chatglm' if (llm_model.split('-')[0]).startswith("chatglm") else llm_model.split('-')[0],
             gen_model_name_or_path=llm_model_dict.get(llm_model, "THUDM/chatglm2-6b-int4"),
             lora_model_name_or_path=None,
         )
