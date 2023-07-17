@@ -7,6 +7,7 @@ from typing import Union, List
 
 from similarities import Similarity
 from textgen import ChatGlmModel, GptModel
+import torch
 
 PROMPT_TEMPLATE = """\
 基于以下已知信息，简洁和专业的来回答用户的问题。
@@ -29,7 +30,12 @@ class ChatPDF:
             lora_model_name_or_path: str = None,
 
     ):
-        self.sim_model = Similarity(model_name_or_path=sim_model_name_or_path)
+        device = 'cpu'
+        if torch.cuda.is_available():
+            device = 'cuda'
+        elif torch.backends.mps.is_available():
+            device = 'mps'
+        self.sim_model = Similarity(model_name_or_path=sim_model_name_or_path,device=device)
 
         if gen_model_type == "chatglm":
             self.gen_model = ChatGlmModel(gen_model_type, gen_model_name_or_path, peft_name=lora_model_name_or_path)
