@@ -27,7 +27,7 @@
 
 ## 原理
 
-<img src="https://github.com/shibing624/chatpdf/blob/main/docs/chatpdf.jpg" width="860" />
+<img src="https://github.com/shibing624/ChatPDF/blob/main/chatpdf.jpg" width="860" />
 
 ## 使用说明
 
