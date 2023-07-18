@@ -165,14 +165,7 @@ class ChatPDF:
 
 
 if __name__ == "__main__":
-    import sys
-
-    if len(sys.argv) >= 2:
-        gen_model_name_or_path = sys.argv[1]
-    else:
-        print('Usage: python chatpdf.py <gen_model_name_or_path>')
-        gen_model_name_or_path = "THUDM/chatglm-6b-int4-qe"
-    m = ChatPDF(gen_model_name_or_path=gen_model_name_or_path)
+    m = ChatPDF(gen_model_name_or_path="THUDM/chatglm-6b-int4-qe")
     m.load_doc_files(doc_files='sample.pdf')
     response = m.query('自然语言中的非平行迁移是指什么？')
     print(response[0])
