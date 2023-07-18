@@ -5,9 +5,9 @@
 """
 from typing import Union, List
 
+import torch
 from similarities import Similarity
 from textgen import ChatGlmModel, GptModel
-import torch
 
 PROMPT_TEMPLATE = """\
 基于以下已知信息，简洁和专业的来回答用户的问题。
@@ -35,7 +35,7 @@ class ChatPDF:
             device = 'cuda'
         elif torch.backends.mps.is_available():
             device = 'mps'
-        self.sim_model = Similarity(model_name_or_path=sim_model_name_or_path,device=device)
+        self.sim_model = Similarity(model_name_or_path=sim_model_name_or_path, device=device)
 
         if gen_model_type == "chatglm":
             self.gen_model = ChatGlmModel(gen_model_type, gen_model_name_or_path, peft_name=lora_model_name_or_path)
@@ -171,7 +171,7 @@ if __name__ == "__main__":
         gen_model_name_or_path = sys.argv[1]
     else:
         print('Usage: python chatpdf.py <gen_model_name_or_path>')
-        gen_model_name_or_path = "THUDM/chatglm2-6b-int4"
+        gen_model_name_or_path = "THUDM/chatglm-6b-int4-qe"
     m = ChatPDF(gen_model_name_or_path=gen_model_name_or_path)
     m.load_doc_files(doc_files='sample.pdf')
     response = m.query('自然语言中的非平行迁移是指什么？')

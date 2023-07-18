@@ -13,13 +13,6 @@ from loguru import logger
 
 from chatpdf import ChatPDF
 
-import torch
-if torch.backends.mps.is_available():
-    CHATGLM2_6B =os.getenv("CHATGLM2_6B","./chatglm2-6b/")
-else:
-    CHATGLM2_6B = "THUDM/chatglm2-6b"
-
-
 pwd_path = os.path.abspath(os.path.dirname(__file__))
 
 CONTENT_DIR = os.path.join(pwd_path, "content")
@@ -28,22 +21,20 @@ VECTOR_SEARCH_TOP_K = 3
 MAX_INPUT_LEN = 2048
 
 embedding_model_dict = {
+    "text2vec-base": "shibing624/text2vec-base-chinese",
     "text2vec-multilingual": "shibing624/text2vec-base-multilingual",
     "text2vec-large": "GanymedeNil/text2vec-large-chinese",
-    "text2vec-base": "shibing624/text2vec-base-chinese",
     "sentence-transformers": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
     "ernie-tiny": "nghuyong/ernie-3.0-nano-zh",
     "ernie-base": "nghuyong/ernie-3.0-base-zh",
 }
 
 # supported LLM models
-
-
 llm_model_dict = {
-    "chatglm2-6b": CHATGLM2_6B,
-    "chatglm2-6b-int4": "THUDM/chatglm2-6b-int4",
-    "chatglm-6b-int4": "THUDM/chatglm-6b-int4",
     "chatglm-6b-int4-qe": "THUDM/chatglm-6b-int4-qe",
+    "chatglm-2-6b": "THUDM/chatglm2-6b",
+    "chatglm-2-6b-int4": "THUDM/chatglm2-6b-int4",
+    "chatglm-6b-int4": "THUDM/chatglm-6b-int4",
     "chatglm-6b": "THUDM/chatglm-6b",
     "llama-7b": "shibing624/chinese-alpaca-plus-7b-hf",
     "llama-13b": "shibing624/chinese-alpaca-plus-13b-hf",
@@ -145,11 +136,10 @@ def reinit_model(llm_model, embedding_model, history):
         model = ChatPDF(
             sim_model_name_or_path=embedding_model_dict.get(
                 embedding_model,
-                "shibing624/text2vec-base-multilingual"
+                "shibing624/text2vec-base-chinese"
             ),
-            # gen_model_type=llm_model.split('-')[0],
-            gen_model_type='chatglm' if (llm_model.split('-')[0]).startswith("chatglm") else llm_model.split('-')[0],
-            gen_model_name_or_path=llm_model_dict.get(llm_model, "THUDM/chatglm2-6b-int4"),
+            gen_model_type=llm_model.split('-')[0],
+            gen_model_name_or_path=llm_model_dict.get(llm_model, "THUDM/chatglm-6b-int4-qe"),
             lora_model_name_or_path=None,
         )
 
