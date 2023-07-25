@@ -83,7 +83,7 @@ class ChatPDF:
         if int4:
             model = model.quantize(4).cuda()
         elif int8:
-            model = model.quantize(4).cuda()
+            model = model.quantize(8).cuda()
         model.generation_config = GenerationConfig.from_pretrained(gen_model_name_or_path)
         tokenizer = AutoTokenizer.from_pretrained(
             gen_model_name_or_path,
