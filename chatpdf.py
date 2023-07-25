@@ -32,7 +32,9 @@ class ChatPDF:
             gen_model_type: str = "baichuan",
             gen_model_name_or_path: str = "baichuan-inc/Baichuan-13B-Chat",
             lora_model_name_or_path: str = None,
-            device: str = None
+            device: str = None,
+            int8: bool = False,
+            int4: bool = False,
     ):
         default_device = 'cpu'
         if torch.cuda.is_available():
@@ -44,27 +46,44 @@ class ChatPDF:
         self.gen_model, self.tokenizer = self._init_gen_model(
             gen_model_type,
             gen_model_name_or_path,
-            peft_name=lora_model_name_or_path
+            peft_name=lora_model_name_or_path,
+            int8=int8,
+            int4=int4,
         )
         self.history = None
         self.doc_files = None
 
-    def _init_gen_model(self, gen_model_type: str, gen_model_name_or_path: str, peft_name: str = None):
+    def _init_gen_model(
+            self,
+            gen_model_type: str,
+            gen_model_name_or_path: str,
+            peft_name: str = None,
+            int8: bool = False,
+            int4: bool = False,
+    ):
         """Init generate model."""
+        if int8 or int4:
+            device_map = None
+        else:
+            device_map = "auto"
         if gen_model_type == "chatglm":
             model = AutoModel.from_pretrained(
                 gen_model_name_or_path,
                 torch_dtype=torch.float16,
-                device_map="auto",
+                device_map=device_map,
                 trust_remote_code=True
             )
         else:
             model = AutoModelForCausalLM.from_pretrained(
                 gen_model_name_or_path,
                 torch_dtype=torch.float16,
-                device_map="auto",
+                device_map=device_map,
                 trust_remote_code=True
             )
+        if int4:
+            model = model.quantize(4).cuda()
+        elif int8:
+            model = model.quantize(4).cuda()
         model.generation_config = GenerationConfig.from_pretrained(gen_model_name_or_path)
         tokenizer = AutoTokenizer.from_pretrained(
             gen_model_name_or_path,
@@ -76,7 +95,6 @@ class ChatPDF:
                 model,
                 peft_name,
                 torch_dtype=torch.float16,
-                device_map="auto",
             )
             logger.info(f"Loaded peft model from {peft_name}")
         return model, tokenizer
@@ -234,6 +252,8 @@ if __name__ == "__main__":
     parser.add_argument("--gen_model", type=str, default="baichuan-inc/Baichuan-13B-Chat")
     parser.add_argument("--lora_model", type=str, default=None)
     parser.add_argument("--device", type=str, default=None)
+    parser.add_argument("--int4", action='store_true', help="use int4 quantization")
+    parser.add_argument("--int8", action='store_true', help="use int8 quantization")
     args = parser.parse_args()
     print(args)
     m = ChatPDF(
@@ -241,7 +261,9 @@ if __name__ == "__main__":
         gen_model_type=args.gen_model_type,
         gen_model_name_or_path=args.gen_model,
         lora_model_name_or_path=args.lora_model,
-        device=args.device
+        device=args.device,
+        int4=args.int4,
+        int8=args.int8
     )
     m.load_doc_files(doc_files='sample.pdf')
     response = m.query('自然语言中的非平行迁移是指什么？')

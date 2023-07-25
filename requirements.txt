@@ -1,6 +1,7 @@
 gradio
 similarities>=1.0.5
 sentencepiece
+transformers_stream_generator
 markdown
 PyPDF2
 python-docx

@@ -49,7 +49,9 @@ model = ChatPDF(
     gen_model_type="baichuan",
     gen_model_name_or_path="baichuan-inc/Baichuan-13B-Chat",
     lora_model_name_or_path=None,
-    device=None
+    device=None,
+    int4=True,
+    int8=False,
 )
 
 
