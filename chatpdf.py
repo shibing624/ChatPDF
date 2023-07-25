@@ -13,8 +13,7 @@ from similarities import Similarity
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel
 from transformers.generation.utils import GenerationConfig
 
-PROMPT_TEMPLATE = """\
-基于以下已知信息，简洁和专业的来回答用户的问题。
+PROMPT_TEMPLATE = """基于以下已知信息，简洁和专业的来回答用户的问题。
 如果无法从中得到答案，请说 "根据已知信息无法回答该问题" 或 "没有提供足够的相关信息"，不允许在答案中添加编造成分，答案请使用中文。
 
 已知内容:
@@ -225,7 +224,6 @@ class ChatPDF:
         if not reference_results:
             return '没有提供足够的相关信息', reference_results
         reference_results = self._add_source_numbers(reference_results)
-
         context_str = '\n'.join(reference_results)[:(max_input_size - len(PROMPT_TEMPLATE))]
 
         prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
@@ -267,6 +265,7 @@ if __name__ == "__main__":
     )
     m.load_doc_files(doc_files='sample.pdf')
     response = m.query('自然语言中的非平行迁移是指什么？')
+    print(response)
     print(response[0])
     response = m.query('本文作者是谁？')
-    print(response[0])
+    print(response)
