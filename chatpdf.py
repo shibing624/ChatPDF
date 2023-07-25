@@ -3,6 +3,7 @@
 @author:XuMing(xuming624@qq.com)
 @description: 
 """
+import argparse
 from typing import Union, List
 
 import torch
@@ -227,7 +228,21 @@ class ChatPDF:
 
 
 if __name__ == "__main__":
-    m = ChatPDF()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sim_model", type=str, default="shibing624/text2vec-base-chinese")
+    parser.add_argument("--gen_model_type", type=str, default="baichuan")
+    parser.add_argument("--gen_model", type=str, default="baichuan-inc/Baichuan-13B-Chat")
+    parser.add_argument("--lora_model", type=str, default=None)
+    parser.add_argument("--device", type=str, default=None)
+    args = parser.parse_args()
+    print(args)
+    m = ChatPDF(
+        sim_model_name_or_path=args.sim_model,
+        gen_model_type=args.gen_model_type,
+        gen_model_name_or_path=args.gen_model,
+        lora_model_name_or_path=args.lora_model,
+        device=args.device
+    )
     m.load_doc_files(doc_files='sample.pdf')
     response = m.query('自然语言中的非平行迁移是指什么？')
     print(response[0])
