@@ -31,6 +31,7 @@ embedding_model_dict = {
 
 # supported LLM models
 llm_model_dict = {
+    "baichuan-13b-chat": "baichuan-inc/Baichuan-13B-Chat",
     "chatglm-6b-int4-qe": "THUDM/chatglm-6b-int4-qe",
     "chatglm-2-6b": "THUDM/chatglm2-6b",
     "chatglm-2-6b-int4": "THUDM/chatglm2-6b-int4",
@@ -43,7 +44,13 @@ llm_model_dict = {
 llm_model_dict_list = list(llm_model_dict.keys())
 embedding_model_dict_list = list(embedding_model_dict.keys())
 
-model = None
+model = ChatPDF(
+    sim_model_name_or_path="shibing624/text2vec-base-chinese",
+    gen_model_type="baichuan",
+    gen_model_name_or_path="baichuan-inc/Baichuan-13B-Chat",
+    lora_model_name_or_path=None,
+    device=None
+)
 
 
 def get_file_list():
@@ -105,7 +112,7 @@ def get_answer(query, index_path, history, topn=VECTOR_SEARCH_TOP_K, max_input_s
     if index_path and not only_chat:
         if not model.sim_model.corpus_embeddings:
             model.load_index(index_path)
-        response, empty_history, reference_results = model.query(query=query, topn=topn, max_input_size=max_input_size)
+        response, reference_results = model.query(query=query, topn=topn, max_input_size=max_input_size)
 
         logger.debug(f"query: {query}, response with content: {response}")
         for i in range(len(reference_results)):
@@ -115,7 +122,7 @@ def get_answer(query, index_path, history, topn=VECTOR_SEARCH_TOP_K, max_input_s
         history = history + [[query, response]]
     else:
         # 未加载文件，仅返回生成模型结果
-        response, empty_history = model.gen_model.chat(query)
+        response = model.generate_answer(query)
         response = parse_text(response)
         history = history + [[query, response]]
         logger.debug(f"query: {query}, response: {response}")
@@ -139,7 +146,7 @@ def reinit_model(llm_model, embedding_model, history):
                 "shibing624/text2vec-base-chinese"
             ),
             gen_model_type=llm_model.split('-')[0],
-            gen_model_name_or_path=llm_model_dict.get(llm_model, "THUDM/chatglm-6b-int4-qe"),
+            gen_model_name_or_path=llm_model_dict.get(llm_model, "baichuan-inc/Baichuan-13B-Chat"),
             lora_model_name_or_path=None,
         )
 

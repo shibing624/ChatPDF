@@ -6,8 +6,11 @@
 from typing import Union, List
 
 import torch
+from loguru import logger
+from peft import PeftModel
 from similarities import Similarity
-from textgen import ChatGlmModel, GptModel
+from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel
+from transformers.generation.utils import GenerationConfig
 
 PROMPT_TEMPLATE = """\
 基于以下已知信息，简洁和专业的来回答用户的问题。
@@ -24,25 +27,96 @@ PROMPT_TEMPLATE = """\
 class ChatPDF:
     def __init__(
             self,
-            sim_model_name_or_path: str = "shibing624/text2vec-base-multilingual",
-            gen_model_type: str = "chatglm",
-            gen_model_name_or_path: str = "THUDM/chatglm-6b-int4",
+            sim_model_name_or_path: str = "shibing624/text2vec-base-chinese",
+            gen_model_type: str = "baichuan",
+            gen_model_name_or_path: str = "baichuan-inc/Baichuan-13B-Chat",
             lora_model_name_or_path: str = None,
-
+            device: str = None
     ):
-        device = 'cpu'
+        default_device = 'cpu'
         if torch.cuda.is_available():
-            device = 'cuda'
+            default_device = 'cuda'
         elif torch.backends.mps.is_available():
-            device = 'mps'
-        self.sim_model = Similarity(model_name_or_path=sim_model_name_or_path, device=device)
-
-        if gen_model_type == "chatglm":
-            self.gen_model = ChatGlmModel(gen_model_type, gen_model_name_or_path, peft_name=lora_model_name_or_path)
-        else:
-            self.gen_model = GptModel(gen_model_type, gen_model_name_or_path, peft_name=lora_model_name_or_path)
+            default_device = 'mps'
+        self.device = device or default_device
+        self.sim_model = Similarity(model_name_or_path=sim_model_name_or_path, device=self.device)
+        self.gen_model, self.tokenizer = self._init_gen_model(
+            gen_model_type,
+            gen_model_name_or_path,
+            peft_name=lora_model_name_or_path
+        )
         self.history = None
         self.doc_files = None
+
+    def _init_gen_model(self, gen_model_type: str, gen_model_name_or_path: str, peft_name: str = None):
+        """Init generate model."""
+        if gen_model_type == "chatglm":
+            model = AutoModel.from_pretrained(
+                gen_model_name_or_path,
+                torch_dtype=torch.float16,
+                device_map="auto",
+                trust_remote_code=True
+            )
+        else:
+            model = AutoModelForCausalLM.from_pretrained(
+                gen_model_name_or_path,
+                torch_dtype=torch.float16,
+                device_map="auto",
+                trust_remote_code=True
+            )
+        model.generation_config = GenerationConfig.from_pretrained(gen_model_name_or_path)
+        tokenizer = AutoTokenizer.from_pretrained(
+            gen_model_name_or_path,
+            use_fast=False,
+            trust_remote_code=True
+        )
+        if peft_name:
+            model = PeftModel.from_pretrained(
+                model,
+                peft_name,
+                torch_dtype=torch.float16,
+                device_map="auto",
+            )
+            logger.info(f"Loaded peft model from {peft_name}")
+        return model, tokenizer
+
+    @torch.inference_mode()
+    def generate_answer(
+            self,
+            prompt,
+            max_new_tokens=512,
+            temperature=0.7,
+            top_k=40,
+            top_p=0.9,
+            do_sample=True,
+            repetition_penalty=1.0,
+            context_len=2048
+    ):
+        generation_config = dict(
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            top_k=top_k,
+            top_p=top_p,
+            do_sample=do_sample,
+            repetition_penalty=repetition_penalty,
+        )
+        input_ids = self.tokenizer(prompt).input_ids
+        max_src_len = context_len - max_new_tokens - 8
+        input_ids = input_ids[-max_src_len:]
+        generation_output = self.gen_model.generate(
+            input_ids=torch.as_tensor([input_ids]).to(self.device),
+            **generation_config,
+        )
+        output_ids = generation_output[0]
+        output = self.tokenizer.decode(output_ids, skip_special_tokens=False)
+        stop_str = self.tokenizer.eos_token
+        l_prompt = len(self.tokenizer.decode(input_ids, skip_special_tokens=False))
+        pos = output.rfind(stop_str, l_prompt)
+        if pos != -1:
+            output = output[l_prompt:pos]
+        else:
+            output = output[l_prompt:]
+        return output.strip()
 
     def load_doc_files(self, doc_files: Union[str, List[str]]):
         """Load document files."""
@@ -114,19 +188,12 @@ class ChatPDF:
         """Add source numbers to a list of strings."""
         return [f'[{idx + 1}]\t "{item}"' for idx, item in enumerate(lst)]
 
-    def _generate_answer(self, query_str: str, context_str: str, history=None, max_length=1024):
-        """Generate answer from query and context."""
-        prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query_str)
-        response, out_history = self.gen_model.chat(prompt, history, max_length=max_length)
-        return response, out_history
-
     def query(
             self,
             query: str,
             topn: int = 5,
-            max_length: int = 1024,
+            max_length: int = 512,
             max_input_size: int = 1024,
-            use_history: bool = False
     ):
         """Query from corpus."""
 
@@ -142,14 +209,9 @@ class ChatPDF:
 
         context_str = '\n'.join(reference_results)[:(max_input_size - len(PROMPT_TEMPLATE))]
 
-        if use_history:
-            response, out_history = self._generate_answer(query, context_str, self.history, max_length=max_length)
-            self.history = out_history
-        else:
-
-            response, out_history = self._generate_answer(query, context_str)
-
-        return response, out_history, reference_results
+        prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
+        response = self.generate_answer(prompt, max_new_tokens=max_length)
+        return response, reference_results
 
     def save_index(self, index_path=None):
         """Save model."""
@@ -165,7 +227,7 @@ class ChatPDF:
 
 
 if __name__ == "__main__":
-    m = ChatPDF(gen_model_name_or_path="THUDM/chatglm-6b-int4-qe")
+    m = ChatPDF()
     m.load_doc_files(doc_files='sample.pdf')
     response = m.query('自然语言中的非平行迁移是指什么？')
     print(response[0])
