@@ -4,6 +4,7 @@
 @description:
 modified from https://github.com/imClumsyPanda/langchain-ChatGLM/blob/master/webui.py
 """
+import argparse
 import hashlib
 import os
 import shutil
@@ -31,6 +32,7 @@ embedding_model_dict = {
 
 # supported LLM models
 llm_model_dict = {
+    "llama-2-7b": "LinkSoul/Chinese-Llama-2-7b-4bit",
     "baichuan-13b-chat": "baichuan-inc/Baichuan-13B-Chat",
     "chatglm-6b-int4-qe": "THUDM/chatglm-6b-int4-qe",
     "chatglm-2-6b": "THUDM/chatglm2-6b",
@@ -44,14 +46,25 @@ llm_model_dict = {
 llm_model_dict_list = list(llm_model_dict.keys())
 embedding_model_dict_list = list(embedding_model_dict.keys())
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--sim_model", type=str, default="shibing624/text2vec-base-chinese")
+parser.add_argument("--gen_model_type", type=str, default="llama")
+parser.add_argument("--gen_model", type=str, default="LinkSoul/Chinese-Llama-2-7b-4bit")
+parser.add_argument("--lora_model", type=str, default=None)
+parser.add_argument("--device", type=str, default=None)
+parser.add_argument("--int4", action='store_false', help="use int4 quantization")
+parser.add_argument("--int8", action='store_true', help="use int8 quantization")
+args = parser.parse_args()
+print(args)
+
 model = ChatPDF(
-    sim_model_name_or_path="shibing624/text2vec-base-chinese",
-    gen_model_type="baichuan",
-    gen_model_name_or_path="baichuan-inc/Baichuan-13B-Chat",
-    lora_model_name_or_path=None,
-    device=None,
-    int4=True,
-    int8=False,
+    sim_model_name_or_path=args.sim_model,
+    gen_model_type=args.gen_model_type,
+    gen_model_name_or_path=args.gen_model,
+    lora_model_name_or_path=args.lora_model,
+    device=args.device,
+    int4=args.int4,
+    int8=args.int8,
 )
 
 
@@ -114,7 +127,8 @@ def get_answer(query, index_path, history, topn=VECTOR_SEARCH_TOP_K, max_input_s
     if index_path and not only_chat:
         if not model.sim_model.corpus_embeddings:
             model.load_index(index_path)
-        response, reference_results = model.query(query=query, topn=topn, max_input_size=max_input_size)
+        response, reference_results = model.predict(
+            query=query, topn=topn, context_len=max_input_size)
 
         logger.debug(f"query: {query}, response with content: {response}")
         for i in range(len(reference_results)):
@@ -124,7 +138,7 @@ def get_answer(query, index_path, history, topn=VECTOR_SEARCH_TOP_K, max_input_s
         history = history + [[query, response]]
     else:
         # 未加载文件，仅返回生成模型结果
-        response = model.generate_answer(query)
+        response = model.stream_generate_answer(query, context_len=max_input_size)
         response = parse_text(response)
         history = history + [[query, response]]
         logger.debug(f"query: {query}, response: {response}")
@@ -291,5 +305,5 @@ with gr.Blocks(css=block_css) as demo:
     clear_btn.click(reset_chat, [chatbot, query], [chatbot, query])
 
 demo.queue(concurrency_count=3).launch(
-    server_name='0.0.0.0', share=False, inbrowser=False
+    server_name='0.0.0.0', server_port=8082, share=False, inbrowser=False
 )

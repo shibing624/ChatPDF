@@ -4,14 +4,32 @@
 @description: 
 """
 import argparse
+from threading import Thread
 from typing import Union, List
 
 import torch
 from loguru import logger
 from peft import PeftModel
 from similarities import Similarity
-from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel
-from transformers.generation.utils import GenerationConfig
+from transformers import (
+    AutoModel,
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BloomForCausalLM,
+    BloomTokenizerFast,
+    LlamaTokenizer,
+    LlamaForCausalLM,
+    TextIteratorStreamer,
+    GenerationConfig,
+)
+
+MODEL_CLASSES = {
+    "bloom": (BloomForCausalLM, BloomTokenizerFast),
+    "chatglm": (AutoModel, AutoTokenizer),
+    "llama": (LlamaForCausalLM, LlamaTokenizer),
+    "baichuan": (AutoModelForCausalLM, AutoTokenizer),
+    "auto": (AutoModelForCausalLM, AutoTokenizer),
+}
 
 PROMPT_TEMPLATE = """基于以下已知信息，简洁和专业的来回答用户的问题。
 如果无法从中得到答案，请说 "根据已知信息无法回答该问题" 或 "没有提供足够的相关信息"，不允许在答案中添加编造成分，答案请使用中文。
@@ -35,9 +53,9 @@ class ChatPDF:
             int8: bool = False,
             int4: bool = False,
     ):
-        default_device = 'cpu'
+        default_device = torch.device('cpu')
         if torch.cuda.is_available():
-            default_device = 'cuda'
+            default_device = torch.device(0)
         elif torch.backends.mps.is_available():
             default_device = 'mps'
         self.device = device or default_device
@@ -49,7 +67,7 @@ class ChatPDF:
             int8=int8,
             int4=int4,
         )
-        self.history = None
+        self.history = []
         self.doc_files = None
 
     def _init_gen_model(
@@ -65,30 +83,32 @@ class ChatPDF:
             device_map = None
         else:
             device_map = "auto"
-        if gen_model_type == "chatglm":
-            model = AutoModel.from_pretrained(
-                gen_model_name_or_path,
-                torch_dtype=torch.float16,
-                device_map=device_map,
-                trust_remote_code=True
-            )
-        else:
-            model = AutoModelForCausalLM.from_pretrained(
-                gen_model_name_or_path,
-                torch_dtype=torch.float16,
-                device_map=device_map,
-                trust_remote_code=True
-            )
-        if int4:
-            model = model.quantize(4).cuda()
-        elif int8:
-            model = model.quantize(8).cuda()
-        model.generation_config = GenerationConfig.from_pretrained(gen_model_name_or_path)
-        tokenizer = AutoTokenizer.from_pretrained(
+        model_class, tokenizer_class = MODEL_CLASSES[gen_model_type]
+        tokenizer = tokenizer_class.from_pretrained(gen_model_name_or_path, trust_remote_code=True)
+        model = model_class.from_pretrained(
             gen_model_name_or_path,
-            use_fast=False,
-            trust_remote_code=True
+            load_in_8bit=int8 if gen_model_type not in ['baichuan', 'chatglm'] else False,
+            load_in_4bit=int4 if gen_model_type not in ['baichuan', 'chatglm'] else False,
+            torch_dtype=torch.float16,
+            low_cpu_mem_usage=True,
+            device_map=device_map,
+            trust_remote_code=True,
         )
+        try:
+            model.generation_config = GenerationConfig.from_pretrained(args.base_model, trust_remote_code=True)
+        except OSError:
+            print("Failed to load generation config, use default.")
+        if self.device == torch.device('cpu'):
+            model.float()
+        if gen_model_type in ['baichuan', 'chatglm']:
+            if int4:
+                model = model.quantize(4).cuda()
+            elif int8:
+                model = model.quantize(8).cuda()
+        try:
+            model.generation_config = GenerationConfig.from_pretrained(gen_model_name_or_path)
+        except Exception as e:
+            logger.warning(f"Failed to load generation config from {gen_model_name_or_path}, {e}")
         if peft_name:
             model = PeftModel.from_pretrained(
                 model,
@@ -96,45 +116,33 @@ class ChatPDF:
                 torch_dtype=torch.float16,
             )
             logger.info(f"Loaded peft model from {peft_name}")
+        model.eval()
         return model, tokenizer
 
     @torch.inference_mode()
-    def generate_answer(
+    def stream_generate_answer(
             self,
             prompt,
             max_new_tokens=512,
             temperature=0.7,
-            top_k=40,
-            top_p=0.9,
-            do_sample=True,
             repetition_penalty=1.0,
             context_len=2048
     ):
-        generation_config = dict(
-            max_new_tokens=max_new_tokens,
-            temperature=temperature,
-            top_k=top_k,
-            top_p=top_p,
-            do_sample=do_sample,
-            repetition_penalty=repetition_penalty,
-        )
+        streamer = TextIteratorStreamer(self.tokenizer, timeout=60.0, skip_prompt=True, skip_special_tokens=True)
         input_ids = self.tokenizer(prompt).input_ids
         max_src_len = context_len - max_new_tokens - 8
         input_ids = input_ids[-max_src_len:]
-        generation_output = self.gen_model.generate(
+        generation_kwargs = dict(
             input_ids=torch.as_tensor([input_ids]).to(self.device),
-            **generation_config,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            repetition_penalty=repetition_penalty,
+            streamer=streamer,
         )
-        output_ids = generation_output[0]
-        output = self.tokenizer.decode(output_ids, skip_special_tokens=False)
-        stop_str = self.tokenizer.eos_token
-        l_prompt = len(self.tokenizer.decode(input_ids, skip_special_tokens=False))
-        pos = output.rfind(stop_str, l_prompt)
-        if pos != -1:
-            output = output[l_prompt:pos]
-        else:
-            output = output[l_prompt:]
-        return output.strip()
+        thread = Thread(target=self.gen_model.generate, kwargs=generation_kwargs)
+        thread.start()
+
+        yield from streamer
 
     def load_doc_files(self, doc_files: Union[str, List[str]]):
         """Load document files."""
@@ -206,12 +214,14 @@ class ChatPDF:
         """Add source numbers to a list of strings."""
         return [f'[{idx + 1}]\t "{item}"' for idx, item in enumerate(lst)]
 
-    def query(
+    def predict(
             self,
             query: str,
             topn: int = 5,
             max_length: int = 512,
-            max_input_size: int = 1024,
+            context_len: int = 2048,
+            temperature: float = 0.7,
+            do_print: bool = True,
     ):
         """Query from corpus."""
 
@@ -224,10 +234,29 @@ class ChatPDF:
         if not reference_results:
             return '没有提供足够的相关信息', reference_results
         reference_results = self._add_source_numbers(reference_results)
-        context_str = '\n'.join(reference_results)[:(max_input_size - len(PROMPT_TEMPLATE))]
+        context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
 
         prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
-        response = self.generate_answer(prompt, max_new_tokens=max_length)
+        self.history.append([prompt, ''])
+        response = ""
+        if do_print:
+            print(f"> ", end="", flush=True)
+        for new_text in self.stream_generate_answer(
+                self.gen_model,
+                self.tokenizer,
+                prompt,
+                self.device,
+                max_new_tokens=max_length,
+                temperature=temperature,
+                context_len=context_len,
+        ):
+            response += new_text
+            if do_print:
+                print(new_text, end="", flush=True)
+        if do_print:
+            print()
+        response = response.strip()
+        self.history[-1][1] = response
         return response, reference_results
 
     def save_index(self, index_path=None):
@@ -264,8 +293,5 @@ if __name__ == "__main__":
         int8=args.int8
     )
     m.load_doc_files(doc_files='sample.pdf')
-    response = m.query('自然语言中的非平行迁移是指什么？')
-    print(response)
-    print(response[0])
-    response = m.query('本文作者是谁？')
-    print(response)
+    m.predict('自然语言中的非平行迁移是指什么？', do_print=True)
+    m.predict('本文作者是谁？', do_print=True)
