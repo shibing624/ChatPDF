@@ -138,7 +138,12 @@ def get_answer(query, index_path, history, topn=VECTOR_SEARCH_TOP_K, max_input_s
         history = history + [[query, response]]
     else:
         # 未加载文件，仅返回生成模型结果
-        response = model.stream_generate_answer(query, context_len=max_input_size)
+        model.history.append([query, ''])
+        response = ""
+        for new_text in model.stream_generate_answer(query, context_len=max_input_size):
+            response += new_text
+        response = response.strip()
+        model.history[-1][1] = response
         response = parse_text(response)
         history = history + [[query, response]]
         logger.debug(f"query: {query}, response: {response}")

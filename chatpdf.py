@@ -235,8 +235,6 @@ class ChatPDF:
         prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
         self.history.append([prompt, ''])
         response = ""
-        if do_print:
-            print(f"> ", end="", flush=True)
         for new_text in self.stream_generate_answer(
                 prompt,
                 max_new_tokens=max_length,
@@ -247,7 +245,7 @@ class ChatPDF:
             if do_print:
                 print(new_text, end="", flush=True)
         if do_print:
-            print()
+            print("", flush=True)
         response = response.strip()
         self.history[-1][1] = response
         return response, reference_results
@@ -287,4 +285,8 @@ if __name__ == "__main__":
     )
     m.load_doc_files(doc_files='sample.pdf')
     m.predict('自然语言中的非平行迁移是指什么？', do_print=True)
-    m.predict('本文作者是谁？', do_print=True)
+    while True:
+        query = input("> ")
+        if query == 'exit':
+            break
+        m.predict(query, do_print=True)
