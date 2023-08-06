@@ -94,10 +94,6 @@ class ChatPDF:
             device_map=device_map,
             trust_remote_code=True,
         )
-        try:
-            model.generation_config = GenerationConfig.from_pretrained(args.base_model, trust_remote_code=True)
-        except OSError:
-            print("Failed to load generation config, use default.")
         if self.device == torch.device('cpu'):
             model.float()
         if gen_model_type in ['baichuan', 'chatglm']:
@@ -106,7 +102,7 @@ class ChatPDF:
             elif int8:
                 model = model.quantize(8).cuda()
         try:
-            model.generation_config = GenerationConfig.from_pretrained(gen_model_name_or_path)
+            model.generation_config = GenerationConfig.from_pretrained(gen_model_name_or_path, trust_remote_code=True)
         except Exception as e:
             logger.warning(f"Failed to load generation config from {gen_model_name_or_path}, {e}")
         if peft_name:
