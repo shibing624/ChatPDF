@@ -238,10 +238,7 @@ class ChatPDF:
         if do_print:
             print(f"> ", end="", flush=True)
         for new_text in self.stream_generate_answer(
-                self.gen_model,
-                self.tokenizer,
                 prompt,
-                self.device,
                 max_new_tokens=max_length,
                 temperature=temperature,
                 context_len=context_len,
