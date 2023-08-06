@@ -305,5 +305,5 @@ with gr.Blocks(css=block_css) as demo:
     clear_btn.click(reset_chat, [chatbot, query], [chatbot, query])
 
 demo.queue(concurrency_count=3).launch(
-    server_name='0.0.0.0', server_port=8082, share=False, inbrowser=False
+    server_name='0.0.0.0', server_port=7860, share=False, inbrowser=False
 )
