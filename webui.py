@@ -197,7 +197,7 @@ def get_vector_store(filepath, history, embedding_model):
         local_file_path = os.path.join(CONTENT_DIR, filepath)
 
         local_file_hash = get_file_hash(local_file_path)
-        index_file_name = f"{filepath}.{embedding_model}.{local_file_hash}.index.json"
+        index_file_name = f"{filepath}.{embedding_model}.{local_file_hash}.emb.json"
 
         local_index_path = os.path.join(CONTENT_DIR, index_file_name)
 
