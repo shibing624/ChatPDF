@@ -10,7 +10,7 @@ from typing import Union, List
 import torch
 from loguru import logger
 from peft import PeftModel
-from similarities import Similarity
+from similarities import HnswlibSimilarity
 from transformers import (
     AutoModel,
     AutoModelForCausalLM,
@@ -63,7 +63,7 @@ class ChatPDF:
         elif torch.backends.mps.is_available():
             default_device = 'mps'
         self.device = device or default_device
-        self.sim_model = Similarity(model_name_or_path=sim_model_name_or_path, device=self.device)
+        self.sim_model = HnswlibSimilarity(model_name_or_path=sim_model_name_or_path, device=self.device)
         self.gen_model, self.tokenizer = self._init_gen_model(
             gen_model_type,
             gen_model_name_or_path,
@@ -94,7 +94,6 @@ class ChatPDF:
             load_in_8bit=int8 if gen_model_type not in ['baichuan', 'chatglm'] else False,
             load_in_4bit=int4 if gen_model_type not in ['baichuan', 'chatglm'] else False,
             torch_dtype=torch.float16,
-            low_cpu_mem_usage=True,
             device_map=device_map,
             trust_remote_code=True,
         )
@@ -136,6 +135,7 @@ class ChatPDF:
             input_ids=torch.as_tensor([input_ids]).to(self.device),
             max_new_tokens=max_new_tokens,
             temperature=temperature,
+            do_sample=True,
             repetition_penalty=repetition_penalty,
             streamer=streamer,
         )
@@ -257,13 +257,13 @@ class ChatPDF:
     def save_index(self, index_path=None):
         """Save model."""
         if index_path is None:
-            index_path = '.'.join(self.doc_files.split('.')[:-1]) + '_index.json'
+            index_path = '.'.join(self.doc_files.split('.')[:-1]) + '_index.bin'
         self.sim_model.save_index(index_path)
 
     def load_index(self, index_path=None):
         """Load model."""
         if index_path is None:
-            index_path = '.'.join(self.doc_files.split('.')[:-1]) + '_index.json'
+            index_path = '.'.join(self.doc_files.split('.')[:-1]) + '_index.bin'
         self.sim_model.load_index(index_path)
 
 
