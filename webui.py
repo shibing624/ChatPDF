@@ -29,6 +29,7 @@ embedding_model_dict = {
 
 # supported LLM models
 llm_model_dict = {
+    "yi-6b-chat": "01-ai/Yi-6B-Chat",
     "llama-2-7b": "LinkSoul/Chinese-Llama-2-7b-4bit",
     "llama-7b": "shibing624/chinese-alpaca-plus-7b-hf",
     "baichuan-13b-chat": "baichuan-inc/Baichuan-13B-Chat",
@@ -98,11 +99,11 @@ def parse_text(text):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--sim_model", type=str, default="shibing624/text2vec-base-chinese")
-    parser.add_argument("--gen_model_type", type=str, default="llama")
-    parser.add_argument("--gen_model", type=str, default="LinkSoul/Chinese-Llama-2-7b-4bit")
+    parser.add_argument("--gen_model_type", type=str, default="auto")
+    parser.add_argument("--gen_model", type=str, default="01-ai/Yi-6B-Chat")
     parser.add_argument("--lora_model", type=str, default=None)
     parser.add_argument("--device", type=str, default=None)
-    parser.add_argument("--int4", action='store_false', help="use int4 quantization")
+    parser.add_argument("--int4", action='store_true', help="use int4 quantization")
     parser.add_argument("--int8", action='store_true', help="use int8 quantization")
     parser.add_argument("--server_name", type=str, default="0.0.0.0")
     parser.add_argument("--server_port", type=int, default=8082)
@@ -174,16 +175,18 @@ if __name__ == '__main__':
             global model
             if model is not None:
                 del model
+            gen_model_type = llm_model.split('-')[0]
+            if gen_model_type == 'yi':
+                gen_model_type = 'auto'
             model = ChatPDF(
                 sim_model_name_or_path=embedding_model_dict.get(
                     embedding_model,
                     "shibing624/text2vec-base-chinese"
                 ),
-                gen_model_type=llm_model.split('-')[0],
-                gen_model_name_or_path=llm_model_dict.get(llm_model, "LinkSoul/Chinese-Llama-2-7b-4bit"),
+                gen_model_type=gen_model_type,
+                gen_model_name_or_path=llm_model_dict.get(llm_model, None),
                 lora_model_name_or_path=None,
             )
-
             model_status = """模型已成功重新加载，请选择文件后点击"加载文件"按钮"""
         except Exception as e:
             model = None
