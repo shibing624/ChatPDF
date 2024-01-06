@@ -221,7 +221,6 @@ class ChatPDF:
             do_print: bool = True,
     ):
         """Query from corpus."""
-
         sim_contents = self.sim_model.most_similar(query, topn=topn)
 
         reference_results = []

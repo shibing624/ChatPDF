@@ -17,9 +17,6 @@ from chatpdf import ChatPDF
 pwd_path = os.path.abspath(os.path.dirname(__file__))
 
 CONTENT_DIR = os.path.join(pwd_path, "content")
-logger.info(f"CONTENT_DIR: {CONTENT_DIR}")
-VECTOR_SEARCH_TOP_K = 3
-MAX_INPUT_LEN = 2048
 
 embedding_model_dict = {
     "text2vec-base": "shibing624/text2vec-base-chinese",
@@ -129,21 +126,22 @@ if __name__ == '__main__':
         if not os.path.exists(CONTENT_DIR):
             os.mkdir(CONTENT_DIR)
         filename = os.path.basename(file.name)
-        shutil.move(file.name, os.path.join(CONTENT_DIR, filename))
+        file_path = os.path.join(CONTENT_DIR, filename)
+        logger.info(f"upload file done: {file_path}")
+        shutil.move(file.name, file_path)
         # file_list首位插入新上传的文件
         file_list.insert(0, filename)
         return gr.Dropdown.update(choices=file_list, value=filename)
 
 
-    def get_answer(query, index_path, history, topn=VECTOR_SEARCH_TOP_K, max_input_size=1024, only_chat=False):
+    def get_answer(query, index_path, history, topn=5, max_input_size=2048):
         if model is None:
             return [None, "模型还未加载"], query
-        if index_path and not only_chat:
+        if index_path:
             if not model.sim_model.corpus_embeddings:
                 model.load_index(index_path)
             response, reference_results = model.predict(
                 query=query, topn=topn, context_len=max_input_size)
-
             logger.debug(f"query: {query}, response with content: {response}")
             for i in range(len(reference_results)):
                 r = reference_results[i]
@@ -151,6 +149,7 @@ if __name__ == '__main__':
             response = parse_text(response)
             history = history + [[query, response]]
         else:
+            logger.debug(f"query: {query}, index: {index_path}, response without content")
             # 未加载文件，仅返回生成模型结果
             model.history.append([query, ''])
             response = ""
@@ -228,12 +227,6 @@ if __name__ == '__main__':
         return None, None
 
 
-    def change_max_input_size(input_size):
-        if model is not None:
-            model.max_input_size = input_size
-        return
-
-
     with gr.Blocks(css=block_css) as demo:
         index_path, file_status, model_status = gr.State(""), gr.State(""), gr.State("")
         gr.Markdown(webui_title)
@@ -257,12 +250,6 @@ if __name__ == '__main__':
                                            interactive=True)
                 load_model_button = gr.Button("重新加载模型")
 
-                with gr.Row():
-                    only_chat = gr.Checkbox(False, label="不加载文件(纯聊天)")
-
-                with gr.Row():
-                    topn = gr.Slider(1, 100, 20, step=1, label="最大搜索数量")
-                    max_input_size = gr.Slider(512, 4096, MAX_INPUT_LEN, step=10, label="摘要最大长度")
                 with gr.Tab("select"):
                     selectFile = gr.Dropdown(
                         file_list,
@@ -276,10 +263,6 @@ if __name__ == '__main__':
                         file_types=['.txt', '.md', '.docx', '.pdf']
                     )
                 load_file_button = gr.Button("加载文件")
-        max_input_size.change(
-            change_max_input_size,
-            inputs=max_input_size
-        )
         load_model_button.click(
             reinit_model,
             show_progress=True,
@@ -296,7 +279,7 @@ if __name__ == '__main__':
         )
         query.submit(
             get_answer,
-            [query, index_path, chatbot, topn, max_input_size, only_chat],
+            [query, index_path, chatbot],
             [chatbot, query],
         )
         clear_btn.click(reset_chat, [chatbot, query], [chatbot, query])
