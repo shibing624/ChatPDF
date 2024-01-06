@@ -10,7 +10,7 @@ from typing import Union, List
 import torch
 from loguru import logger
 from peft import PeftModel
-from similarities import Similarity
+from similarities import EnsembleSimilarity, BertSimilarity, BM25Similarity
 from transformers import (
     AutoModel,
     AutoModelForCausalLM,
@@ -30,10 +30,6 @@ MODEL_CLASSES = {
     "baichuan": (AutoModelForCausalLM, AutoTokenizer),
     "auto": (AutoModelForCausalLM, AutoTokenizer),
 }
-
-LLAMA_TEMPLATE = """[INST] <<SYS>>\nYou are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
-
-If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information.\n<</SYS>>\n\n"""
 
 PROMPT_TEMPLATE = """基于以下已知信息，简洁和专业的来回答用户的问题。
 如果无法从中得到答案，请说 "根据已知信息无法回答该问题" 或 "没有提供足够的相关信息"，不允许在答案中添加编造成分，答案请使用中文。
@@ -63,7 +59,9 @@ class ChatPDF:
         elif torch.backends.mps.is_available():
             default_device = 'mps'
         self.device = device or default_device
-        self.sim_model = Similarity(model_name_or_path=sim_model_name_or_path, device=self.device)
+        m1 = BertSimilarity(model_name_or_path=sim_model_name_or_path, device=self.device)
+        m2 = BM25Similarity()
+        self.sim_model = EnsembleSimilarity(similarities=[m1, m2], weights=[0.5, 0.5], c=2)
         self.gen_model, self.tokenizer = self._init_gen_model(
             gen_model_type,
             gen_model_name_or_path,
@@ -184,7 +182,6 @@ class ChatPDF:
     @staticmethod
     def extract_text_from_txt(file_path: str):
         """Extract text content from a TXT file."""
-        contents = []
         with open(file_path, 'r', encoding='utf-8') as f:
             contents = [text.strip() for text in f.readlines() if text.strip()]
         return contents
