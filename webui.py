@@ -33,10 +33,9 @@ embedding_model_dict = {
 # supported LLM models
 llm_model_dict = {
     "llama-2-7b": "LinkSoul/Chinese-Llama-2-7b-4bit",
+    "llama-7b": "shibing624/chinese-alpaca-plus-7b-hf",
     "baichuan-13b-chat": "baichuan-inc/Baichuan-13B-Chat",
     "chatglm-6b": "THUDM/chatglm-6b",
-    "llama-7b": "shibing624/chinese-alpaca-plus-7b-hf",
-    "llama-13b": "shibing624/chinese-alpaca-plus-13b-hf",
 }
 
 llm_model_dict_list = list(llm_model_dict.keys())
@@ -57,12 +56,6 @@ Link in: [https://github.com/shibing624/ChatPDF](https://github.com/shibing624/C
 """
 
 init_message = "欢迎使用 ChatPDF Web UI，可以直接提问或上传文件后提问"
-llama_template = "[INST] <<SYS>>\nYou are a helpful, respectful and honest assistant. " + \
-                 "Always answer as helpfully as possible, while being safe.  " + \
-                 "Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. " + \
-                 "Please ensure that your responses are socially unbiased and positive in nature.\n\n" + \
-                 "If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. " + \
-                 "If you don't know the answer to a question, please don't share false information.\n<</SYS>>\n\n{} [/INST]"
 
 
 def get_file_list():
@@ -118,7 +111,7 @@ if __name__ == '__main__':
     parser.add_argument("--server_port", type=int, default=8082)
     parser.add_argument("--share", action='store_true', help="share model")
     args = parser.parse_args()
-    print(args)
+    logger.info(args)
 
     model = ChatPDF(
         sim_model_name_or_path=args.sim_model,
@@ -159,8 +152,6 @@ if __name__ == '__main__':
             history = history + [[query, response]]
         else:
             # 未加载文件，仅返回生成模型结果
-            if args.gen_model_type == "llama":
-                query = llama_template.format(query)
             model.history.append([query, ''])
             response = ""
             for new_text in model.stream_generate_answer(query, context_len=max_input_size):
@@ -190,7 +181,7 @@ if __name__ == '__main__':
                     "shibing624/text2vec-base-chinese"
                 ),
                 gen_model_type=llm_model.split('-')[0],
-                gen_model_name_or_path=llm_model_dict.get(llm_model, "baichuan-inc/Baichuan-13B-Chat"),
+                gen_model_name_or_path=llm_model_dict.get(llm_model, "LinkSoul/Chinese-Llama-2-7b-4bit"),
                 lora_model_name_or_path=None,
             )
 
