@@ -150,11 +150,11 @@ if __name__ == '__main__':
             response = parse_text(response)
             history = history + [[query, response]]
         else:
-            logger.debug(f"query: {query}, index: {index_path}, response without content")
+            logger.debug(f"query: {query}, index: {index_path}, response without content.")
             # 未加载文件，仅返回生成模型结果
             model.history.append([query, ''])
             response = ""
-            for new_text in model.stream_generate_answer(query, context_len=max_input_size):
+            for new_text in model.stream_generate_answer(context_len=max_input_size):
                 response += new_text
             response = response.strip()
             model.history[-1][1] = response

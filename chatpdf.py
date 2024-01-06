@@ -116,21 +116,35 @@ class ChatPDF:
         model.eval()
         return model, tokenizer
 
+    def _get_chat_input(self):
+        messages = []
+        for conv in self.history:
+            if conv and len(conv) > 0 and conv[0]:
+                messages.append({'role': 'user', 'content': conv[0]})
+            if conv and len(conv) > 1 and conv[1]:
+                messages.append({'role': 'assistant', 'content': conv[1]})
+        input_ids = self.tokenizer.apply_chat_template(
+            conversation=messages,
+            tokenize=True,
+            add_generation_prompt=True,
+            return_tensors='pt'
+        )
+        return input_ids.to(self.gen_model.device)
+
     @torch.inference_mode()
     def stream_generate_answer(
             self,
-            prompt,
             max_new_tokens=512,
             temperature=0.7,
             repetition_penalty=1.0,
             context_len=2048
     ):
         streamer = TextIteratorStreamer(self.tokenizer, timeout=60.0, skip_prompt=True, skip_special_tokens=True)
-        input_ids = self.tokenizer(prompt).input_ids
+        input_ids = self._get_chat_input()
         max_src_len = context_len - max_new_tokens - 8
         input_ids = input_ids[-max_src_len:]
         generation_kwargs = dict(
-            input_ids=torch.as_tensor([input_ids]).to(self.device),
+            input_ids=input_ids,
             max_new_tokens=max_new_tokens,
             temperature=temperature,
             do_sample=True,
@@ -221,22 +235,23 @@ class ChatPDF:
             do_print: bool = True,
     ):
         """Query from corpus."""
-        sim_contents = self.sim_model.most_similar(query, topn=topn)
-
         reference_results = []
-        for query_id, id_score_dict in sim_contents.items():
-            for corpus_id, s in id_score_dict.items():
-                reference_results.append(self.sim_model.corpus[corpus_id])
-        if not reference_results:
-            return '没有提供足够的相关信息', reference_results
-        reference_results = self._add_source_numbers(reference_results)
-        context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
-
-        prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
+        if self.doc_files:
+            sim_contents = self.sim_model.most_similar(query, topn=topn)
+            # Get reference results
+            for query_id, id_score_dict in sim_contents.items():
+                for corpus_id, s in id_score_dict.items():
+                    reference_results.append(self.sim_model.corpus[corpus_id])
+            if not reference_results:
+                return '没有提供足够的相关信息', reference_results
+            reference_results = self._add_source_numbers(reference_results)
+            context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
+            prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
+        else:
+            prompt = query
         self.history.append([prompt, ''])
         response = ""
         for new_text in self.stream_generate_answer(
-                prompt,
                 max_new_tokens=max_length,
                 temperature=temperature,
                 context_len=context_len,
