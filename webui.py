@@ -42,7 +42,20 @@ if __name__ == '__main__':
     logger.info(f"chatpdf model: {model}")
 
 
-    def predict(message, chatbot):
+    def predict_stream(message, history):
+        history_format = []
+        for human, assistant in history:
+            history_format.append([human, assistant])
+        model.history = history_format
+
+        partial_message = ""
+        for chunk in model.predict_stream(message):
+            if len(chunk) != 0:
+                partial_message = partial_message + chunk
+                yield partial_message
+
+
+    def predict(message, history):
         logger.debug(message)
         response, reference_results = model.predict(message, do_print=True)
         r = response + "\n\n" + '\n - '.join(reference_results)
