@@ -2,7 +2,6 @@
 """
 @author:XuMing(xuming624@qq.com)
 @description:
-modified from https://github.com/imClumsyPanda/langchain-ChatGLM/blob/master/webui.py
 """
 import argparse
 import os
@@ -20,7 +19,6 @@ if __name__ == '__main__':
     parser.add_argument("--gen_model_type", type=str, default="auto")
     parser.add_argument("--gen_model", type=str, default="01-ai/Yi-6B-Chat")
     parser.add_argument("--lora_model", type=str, default=None)
-    parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--corpus_files", type=str, default="sample.pdf")
     parser.add_argument("--int4", action='store_true', help="use int4 quantization")
@@ -54,9 +52,9 @@ if __name__ == '__main__':
 
     def vote(data: gr.LikeData):
         if data.liked:
-            print("You upvoted this response: " + data.value)
+            logger.debug(f"like: {data.value}")
         else:
-            print("You downvoted this response: " + data.value)
+            logger.debug(f"dislike: {data.value}")
 
 
     chatbot_stream = gr.Chatbot(avatar_images=(
@@ -72,6 +70,8 @@ if __name__ == '__main__':
         title=title,
         chatbot=chatbot_stream,
         css=css,
+        examples=examples,
+        theme='soft',
     )
 
     with gr.Blocks() as demo:

@@ -20,7 +20,7 @@
       <a href="https://huggingface.co/login?next=%2Fspaces%2Fshibing624%2FChatPDF%3Fduplicate%3Dtrue"><strong>一键部署</strong></a>
     </p>
     <p align="center">
-      <img alt="Animation Demo" src="https://github.com/shibing624/ChatPDF/blob/main/img.jpg" />
+      <img alt="Animation Demo" src="https://github.com/shibing624/ChatPDF/blob/main/docs/img.jpg" />
     </p>
   </p>
 </div>

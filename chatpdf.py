@@ -5,6 +5,7 @@
 """
 import argparse
 import hashlib
+import os
 from threading import Thread
 from typing import Union, List
 
@@ -73,7 +74,7 @@ class ChatPDF:
             int4=int4,
         )
         self.history = []
-        self.corpus_files = None
+        self.corpus_files = corpus_files
         if corpus_files:
             self.add_corpus(corpus_files)
         self.save_corpus_emb_dir = save_corpus_emb_dir
@@ -182,8 +183,19 @@ class ChatPDF:
         self.corpus_files = files
 
     @staticmethod
-    def get_file_hash(fpath):
-        return hashlib.md5(open(fpath, 'rb').read()).hexdigest()
+    def get_file_hash(fpaths):
+        hasher = hashlib.md5()
+        target_file_data = bytes()
+        if isinstance(fpaths, str):
+            fpaths = [fpaths]
+        for fpath in fpaths:
+            with open(fpath, 'rb') as file:
+                chunk = file.read(1024 * 1024)  # read only first 1MB
+                hasher.update(chunk)
+                target_file_data += chunk
+
+        hash_name = hasher.hexdigest()[:16]
+        return hash_name
 
     @staticmethod
     def extract_text_from_pdf(file_path: str):
@@ -245,11 +257,11 @@ class ChatPDF:
             max_length: int = 512,
             context_len: int = 2048,
             temperature: float = 0.7,
-        ):
+    ):
         """Generate predictions stream."""
         reference_results = []
         stop_str = self.tokenizer.eos_token if self.tokenizer.eos_token else "</s>"
-        if self.corpus_files:
+        if self.sim_model.corpus:
             sim_contents = self.sim_model.most_similar(query, topn=topn)
             # Get reference results
             for query_id, id_score_dict in sim_contents.items():
@@ -273,7 +285,6 @@ class ChatPDF:
                 response += new_text
                 yield response
 
-
     def predict(
             self,
             query: str,
@@ -285,7 +296,7 @@ class ChatPDF:
     ):
         """Query from corpus."""
         reference_results = []
-        if self.corpus_files:
+        if self.sim_model.corpus:
             sim_contents = self.sim_model.most_similar(query, topn=topn)
             # Get reference results
             for query_id, id_score_dict in sim_contents.items():
@@ -315,10 +326,13 @@ class ChatPDF:
         return response, reference_results
 
     def save_corpus_emb(self):
-        self.sim_model.save_corpus_embeddings(self.save_corpus_emb_dir)
+        dir_name = self.get_file_hash(self.corpus_files)
+        save_dir = os.path.join(self.save_corpus_emb_dir, dir_name)
+        self.sim_model.save_corpus_embeddings(save_dir)
+        return save_dir
 
-    def load_corpus_emb(self):
-        self.sim_model.load_corpus_embeddings(self.save_corpus_emb_dir)
+    def load_corpus_emb(self, emb_dir: str):
+        self.sim_model.load_corpus_embeddings(emb_dir)
 
 
 if __name__ == "__main__":
@@ -347,7 +361,7 @@ if __name__ == "__main__":
     files = args.corpus_files.split(',')
     m.add_corpus(files=files)
     m.predict('自然语言中的非平行迁移是指什么？', do_print=True)
-    m.save_corpus_emb()
+    save_dir = m.save_corpus_emb()
     del m
     m = ChatPDF(
         sim_model_name_or_path=args.sim_model,
@@ -359,5 +373,5 @@ if __name__ == "__main__":
         int8=args.int8,
         save_corpus_emb_dir='./corpus_embs/',
     )
-    m.load_corpus_emb()
+    m.load_corpus_emb(save_dir)
     m.predict('自然语言中的非平行迁移是指什么？', do_print=True)
