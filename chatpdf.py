@@ -4,6 +4,7 @@
 @description: 
 """
 import argparse
+import hashlib
 from threading import Thread
 from typing import Union, List
 
@@ -49,6 +50,8 @@ class ChatPDF:
             gen_model_type: str = "baichuan",
             gen_model_name_or_path: str = "baichuan-inc/Baichuan-13B-Chat",
             lora_model_name_or_path: str = None,
+            corpus_files: Union[str, List[str]] = None,
+            save_corpus_emb_dir: str = "./corpus_embs/",
             device: str = None,
             int8: bool = False,
             int4: bool = False,
@@ -70,7 +73,10 @@ class ChatPDF:
             int4=int4,
         )
         self.history = []
-        self.doc_files = None
+        self.corpus_files = None
+        if corpus_files:
+            self.add_corpus(corpus_files)
+        self.save_corpus_emb_dir = save_corpus_emb_dir
 
     def _init_gen_model(
             self,
@@ -156,11 +162,11 @@ class ChatPDF:
 
         yield from streamer
 
-    def load_doc_files(self, doc_files: Union[str, List[str]]):
+    def add_corpus(self, files: Union[str, List[str]]):
         """Load document files."""
-        if isinstance(doc_files, str):
-            doc_files = [doc_files]
-        for doc_file in doc_files:
+        if isinstance(files, str):
+            files = [files]
+        for doc_file in files:
             if doc_file.endswith('.pdf'):
                 corpus = self.extract_text_from_pdf(doc_file)
             elif doc_file.endswith('.docx'):
@@ -170,7 +176,11 @@ class ChatPDF:
             else:
                 corpus = self.extract_text_from_txt(doc_file)
             self.sim_model.add_corpus(corpus)
-        self.doc_files = doc_files
+        self.corpus_files = files
+
+    @staticmethod
+    def get_file_hash(fpath):
+        return hashlib.md5(open(fpath, 'rb').read()).hexdigest()
 
     @staticmethod
     def extract_text_from_pdf(file_path: str):
@@ -236,7 +246,7 @@ class ChatPDF:
     ):
         """Query from corpus."""
         reference_results = []
-        if self.doc_files:
+        if self.corpus_files:
             sim_contents = self.sim_model.most_similar(query, topn=topn)
             # Get reference results
             for query_id, id_score_dict in sim_contents.items():
@@ -265,17 +275,11 @@ class ChatPDF:
         self.history[-1][1] = response
         return response, reference_results
 
-    def save_index(self, index_path=None):
-        """Save model."""
-        if index_path is None:
-            index_path = '.'.join(self.doc_files.split('.')[:-1]) + '_emb.json'
-        self.sim_model.save_embeddings(index_path)
+    def save_corpus_emb(self):
+        self.sim_model.save_corpu_embeddings(self.save_corpus_emb_dir)
 
-    def load_index(self, index_path=None):
-        """Load model."""
-        if index_path is None:
-            index_path = '.'.join(self.doc_files.split('.')[:-1]) + '_emb.json'
-        self.sim_model.load_embeddings(index_path)
+    def load_corpus_emb(self):
+        self.sim_model.load_corpus_embeddings(self.save_corpus_emb_dir)
 
 
 if __name__ == "__main__":
@@ -296,12 +300,23 @@ if __name__ == "__main__":
         lora_model_name_or_path=args.lora_model,
         device=args.device,
         int4=args.int4,
-        int8=args.int8
+        int8=args.int8,
+        save_corpus_emb_dir='./corpus_embs/',
     )
-    m.load_doc_files(doc_files='sample.pdf')
     m.predict('自然语言中的非平行迁移是指什么？', do_print=True)
-    while True:
-        query = input("> ")
-        if query == 'exit':
-            break
-        m.predict(query, do_print=True)
+    m.add_corpus(files='sample.pdf')
+    m.predict('自然语言中的非平行迁移是指什么？', do_print=True)
+    m.save_corpus_emb()
+    del m
+    m = ChatPDF(
+        sim_model_name_or_path=args.sim_model,
+        gen_model_type=args.gen_model_type,
+        gen_model_name_or_path=args.gen_model,
+        lora_model_name_or_path=args.lora_model,
+        device=args.device,
+        int4=args.int4,
+        int8=args.int8,
+        save_corpus_emb_dir='./corpus_embs/',
+    )
+    m.load_corpus_emb()
+    m.predict('自然语言中的非平行迁移是指什么？', do_print=True)
