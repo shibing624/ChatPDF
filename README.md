@@ -4,7 +4,7 @@
   </a>
 
 <p align="center">
-    <h3>为ChatGLM/LLaMA等多种LLM提供了一个好用的基于PDF问答(RAG)的图形界面</h3>
+    <h3>为LLM提供了一个好用的基于PDF问答(RAG)的图形界面</h3>
     <p align="center">
       <a href="https://github.com/shibing624/ChatPDF/blob/main/LICENSE">
         <img alt="Tests Passing" src="https://img.shields.io/github/license/shibing624/ChatPDF" />
