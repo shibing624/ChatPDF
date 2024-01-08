@@ -78,6 +78,9 @@ class ChatPDF:
             self.add_corpus(corpus_files)
         self.save_corpus_emb_dir = save_corpus_emb_dir
 
+    def __str__(self):
+        return f"Similarity model: {self.sim_model}, Generate model: {self.gen_model}"
+
     def _init_gen_model(
             self,
             gen_model_type: str,
@@ -235,6 +238,42 @@ class ChatPDF:
         """Add source numbers to a list of strings."""
         return [f'[{idx + 1}]\t "{item}"' for idx, item in enumerate(lst)]
 
+    def predict_stream(
+            self,
+            query: str,
+            topn: int = 5,
+            max_length: int = 512,
+            context_len: int = 2048,
+            temperature: float = 0.7,
+        ):
+        """Generate predictions stream."""
+        reference_results = []
+        stop_str = self.tokenizer.eos_token if self.tokenizer.eos_token else "</s>"
+        if self.corpus_files:
+            sim_contents = self.sim_model.most_similar(query, topn=topn)
+            # Get reference results
+            for query_id, id_score_dict in sim_contents.items():
+                for corpus_id, s in id_score_dict.items():
+                    reference_results.append(self.sim_model.corpus[corpus_id])
+            if not reference_results:
+                yield '没有提供足够的相关信息', reference_results
+            reference_results = self._add_source_numbers(reference_results)
+            context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
+            prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
+        else:
+            prompt = query
+        self.history.append([prompt, ''])
+        response = ""
+        for new_text in self.stream_generate_answer(
+                max_new_tokens=max_length,
+                temperature=temperature,
+                context_len=context_len,
+        ):
+            if new_text != stop_str:
+                response += new_text
+                yield response
+
+
     def predict(
             self,
             query: str,
@@ -276,7 +315,7 @@ class ChatPDF:
         return response, reference_results
 
     def save_corpus_emb(self):
-        self.sim_model.save_corpu_embeddings(self.save_corpus_emb_dir)
+        self.sim_model.save_corpus_embeddings(self.save_corpus_emb_dir)
 
     def load_corpus_emb(self):
         self.sim_model.load_corpus_embeddings(self.save_corpus_emb_dir)
@@ -288,6 +327,7 @@ if __name__ == "__main__":
     parser.add_argument("--gen_model_type", type=str, default="baichuan")
     parser.add_argument("--gen_model", type=str, default="baichuan-inc/Baichuan-13B-Chat")
     parser.add_argument("--lora_model", type=str, default=None)
+    parser.add_argument("--corpus_files", type=str, default="sample.pdf")
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--int4", action='store_true', help="use int4 quantization")
     parser.add_argument("--int8", action='store_true', help="use int8 quantization")
@@ -304,7 +344,8 @@ if __name__ == "__main__":
         save_corpus_emb_dir='./corpus_embs/',
     )
     m.predict('自然语言中的非平行迁移是指什么？', do_print=True)
-    m.add_corpus(files='sample.pdf')
+    files = args.corpus_files.split(',')
+    m.add_corpus(files=files)
     m.predict('自然语言中的非平行迁移是指什么？', do_print=True)
     m.save_corpus_emb()
     del m
