@@ -75,9 +75,9 @@ if __name__ == '__main__':
         os.path.join(pwd_path, "assets/llama.png"),
     ), bubble_full_width=False)
     title = " 🎉ChatPDF WebUI🎉 "
-    description = gr.Markdown("Link in Github: [shibing624/ChatPDF](https://github.com/shibing624/ChatPDF)")
+    description = "Link in Github: [shibing624/ChatPDF](https://github.com/shibing624/ChatPDF)"
     css = """.toast-wrap { display: none !important } """
-    examples = [['Can you tell me about the llama-2 model?'],
+    examples = [['Can you tell me about the NLP?'],
                 ['介绍下NLP']]
     chat_interface_stream = gr.ChatInterface(
         predict,
