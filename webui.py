@@ -58,9 +58,9 @@ if __name__ == '__main__':
     def predict(message, history):
         logger.debug(message)
         response, reference_results = model.predict(message, do_print=True)
-        r = response + "\n\n" + '\n - '.join(reference_results)
+        r = response + "\n\n" + '\n'.join(reference_results)
         logger.debug(r)
-        return gr.Markdown(r)
+        return r
 
 
     def vote(data: gr.LikeData):
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     examples = [['Can you tell me about the NLP?'],
                 ['介绍下NLP']]
     chat_interface_stream = gr.ChatInterface(
-        predict,
+        predict_stream,
         title=title,
         description=description,
         chatbot=chatbot_stream,
