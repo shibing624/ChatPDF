@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
 
     chatbot_stream = gr.Chatbot(
-        height=800,
+        height=600,
         avatar_images=(
             os.path.join(pwd_path, "assets/user.png"),
             os.path.join(pwd_path, "assets/llama.png"),

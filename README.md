@@ -15,19 +15,16 @@
       <p>
         根据文件回答 / 开源模型 / 本地部署LLM
       </p>
-      <a href="https://huggingface.co/spaces/shibing624/ChatPDF"><strong>在线体验</strong></a>
-      	·
-      <a href="https://huggingface.co/login?next=%2Fspaces%2Fshibing624%2FChatPDF%3Fduplicate%3Dtrue"><strong>一键部署</strong></a>
     </p>
     <p align="center">
-      <img alt="Animation Demo" src="https://github.com/shibing624/ChatPDF/blob/main/docs/img.jpg" />
+      <img alt="Animation Demo" src="https://github.com/shibing624/ChatPDF/blob/main/docs/snap.png" width="600" />
     </p>
   </p>
 </div>
 
 ## 原理
 
-<img src="https://github.com/shibing624/ChatPDF/blob/main/docs/chatpdf.jpg" width="860" />
+<img src="https://github.com/shibing624/ChatPDF/blob/main/docs/chatpdf.jpg" width="800" />
 
 ## 使用说明
 
@@ -52,7 +49,7 @@ CUDA_VISIBLE_DEVICES=0 python chatpdf.py --gen_model_type llama --gen_model 01-a
 #### 启动Web服务
 
 ```shell
-CUDA_VISIBLE_DEVICES=0 python webui.py --gen_model_type llama --gen_model 01-ai/Yi-6B-Chat
+CUDA_VISIBLE_DEVICES=0 python webui.py --gen_model_type llama --gen_model 01-ai/Yi-6B-Chat --share
 ```
 
 如果一切顺利，现在，你应该已经可以在浏览器地址栏中输入 http://localhost:7860 查看并使用 ChatPDF 了。
