@@ -43,11 +43,11 @@ if __name__ == '__main__':
 
 
     def predict(message, chatbot):
-        print(message)
-        input_text = message[-1]
-        response, reference_results = model.predict(input_text, do_print=True)
-
-        yield response + "\n" + '\n'.join(reference_results)
+        logger.debug(message)
+        response, reference_results = model.predict(message, do_print=True)
+        r = response + "\n\n" + '\n - '.join(reference_results)
+        logger.debug(r)
+        return gr.Markdown(r)
 
 
     def vote(data: gr.LikeData):
@@ -61,13 +61,15 @@ if __name__ == '__main__':
         os.path.join(pwd_path, "assets/user.png"),
         os.path.join(pwd_path, "assets/llama.png"),
     ), bubble_full_width=False)
-    title = "🎉ChatPDF WebUI🎉 [shibing624/ChatPDF](https://github.com/shibing624/ChatPDF)"
+    title = " 🎉ChatPDF WebUI🎉 "
+    description = gr.Markdown("Link in Github: [shibing624/ChatPDF](https://github.com/shibing624/ChatPDF)")
     css = """.toast-wrap { display: none !important } """
     examples = [['Can you tell me about the llama-2 model?'],
-                ['介绍下北京']]
+                ['介绍下NLP']]
     chat_interface_stream = gr.ChatInterface(
         predict,
         title=title,
+        description=description,
         chatbot=chatbot_stream,
         css=css,
         examples=examples,
