@@ -286,6 +286,7 @@ class ChatPDF:
         reference_results = []
         stop_str = self.tokenizer.eos_token if self.tokenizer.eos_token else "</s>"
         if self.sim_model.corpus:
+            logger.debug(f"corpus size: {len(self.sim_model.corpus)}, top3: {list(self.sim_model.corpus.values())[:3]}")
             sim_contents = self.sim_model.most_similar(query, topn=topn)
             # Get reference results
             for query_id, id_score_dict in sim_contents.items():
@@ -296,8 +297,10 @@ class ChatPDF:
             reference_results = self._add_source_numbers(reference_results)
             context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
             prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
+            logger.debug(prompt)
         else:
             prompt = query
+            logger.debug(prompt)
         self.history.append([prompt, ''])
         response = ""
         for new_text in self.stream_generate_answer(
