@@ -75,8 +75,7 @@ if __name__ == '__main__':
     title = " 🎉ChatPDF WebUI🎉 "
     description = "Link in Github: [shibing624/ChatPDF](https://github.com/shibing624/ChatPDF)"
     css = """.toast-wrap { display: none !important } """
-    examples = [['Can you tell me about the NLP?'],
-                ['介绍下NLP']]
+    examples = ['Can you tell me about the NLP?', '介绍下NLP']
     chat_interface_stream = gr.ChatInterface(
         predict_stream,
         textbox=gr.Textbox(lines=4, placeholder="Ask me question", scale=7),
