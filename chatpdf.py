@@ -6,9 +6,11 @@
 import argparse
 import hashlib
 import os
+import textwrap
 from threading import Thread
 from typing import Union, List
 
+import jieba
 import torch
 from loguru import logger
 from peft import PeftModel
@@ -44,6 +46,23 @@ PROMPT_TEMPLATE = """基于以下已知信息，简洁和专业的来回答用�
 """
 
 
+class ChineseTextSplitter:
+    def __init__(self, chunk_size=250, chunk_overlap=50):
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+
+    def split(self, text):
+        if any("\u4e00" <= ch <= "\u9fff" for ch in text):
+            # check if contains chinese characters
+            chunks = jieba.lcut(text)
+            chunks = [''.join(chunks[i:i + self.chunk_size]) for i in
+                      range(0, len(chunks), self.chunk_size - self.chunk_overlap)]
+        else:
+            chunks = textwrap.wrap(text, width=self.chunk_size)
+
+        return chunks
+
+
 class ChatPDF:
     def __init__(
             self,
@@ -56,6 +75,8 @@ class ChatPDF:
             device: str = None,
             int8: bool = False,
             int4: bool = False,
+            chunk_size: int = 250,
+            chunk_overlap: int = 50,
     ):
         default_device = torch.device('cpu')
         if torch.cuda.is_available():
@@ -78,6 +99,7 @@ class ChatPDF:
         if corpus_files:
             self.add_corpus(corpus_files)
         self.save_corpus_emb_dir = save_corpus_emb_dir
+        self.text_splitter = ChineseTextSplitter(chunk_size, chunk_overlap)
 
     def __str__(self):
         return f"Similarity model: {self.sim_model}, Generate model: {self.gen_model}"
@@ -179,7 +201,9 @@ class ChatPDF:
                 corpus = self.extract_text_from_markdown(doc_file)
             else:
                 corpus = self.extract_text_from_txt(doc_file)
-            self.sim_model.add_corpus(corpus)
+            full_text = ' '.join(corpus)
+            chunks = self.text_splitter.split(full_text)
+            self.sim_model.add_corpus(chunks)
         self.corpus_files = files
 
     @staticmethod
@@ -194,7 +218,7 @@ class ChatPDF:
                 hasher.update(chunk)
                 target_file_data += chunk
 
-        hash_name = hasher.hexdigest()[:16]
+        hash_name = hasher.hexdigest()[:32]
         return hash_name
 
     @staticmethod
@@ -297,6 +321,7 @@ class ChatPDF:
         """Query from corpus."""
         reference_results = []
         if self.sim_model.corpus:
+            logger.debug(f"corpus size: {len(self.sim_model.corpus)}, top3: {list(self.sim_model.corpus.values())[:3]}")
             sim_contents = self.sim_model.most_similar(query, topn=topn)
             # Get reference results
             for query_id, id_score_dict in sim_contents.items():
@@ -306,6 +331,7 @@ class ChatPDF:
                 return '没有提供足够的相关信息', reference_results
             reference_results = self._add_source_numbers(reference_results)
             context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
+            logger.debug(f"context_str: {context_str}")
             prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
         else:
             prompt = query
@@ -332,6 +358,7 @@ class ChatPDF:
         return save_dir
 
     def load_corpus_emb(self, emb_dir: str):
+        logger.debug(f"Loading corpus embeddings from {emb_dir}")
         self.sim_model.load_corpus_embeddings(emb_dir)
 
 
