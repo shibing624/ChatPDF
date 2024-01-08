@@ -360,6 +360,8 @@ class ChatPDF:
     def load_corpus_emb(self, emb_dir: str):
         logger.debug(f"Loading corpus embeddings from {emb_dir}")
         self.sim_model.load_corpus_embeddings(emb_dir)
+        if not self.sim_model.corpus:
+            self.sim_model.corpus = self.sim_model.similarities[0].corpus
 
 
 if __name__ == "__main__":
