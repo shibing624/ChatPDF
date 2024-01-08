@@ -84,6 +84,7 @@ class ChatPDF:
         elif torch.backends.mps.is_available():
             default_device = 'mps'
         self.device = device or default_device
+        self.text_splitter = ChineseTextSplitter(chunk_size, chunk_overlap)
         m1 = BertSimilarity(model_name_or_path=sim_model_name_or_path, device=self.device)
         m2 = BM25Similarity()
         self.sim_model = EnsembleSimilarity(similarities=[m1, m2], weights=[0.5, 0.5], c=2)
@@ -99,7 +100,6 @@ class ChatPDF:
         if corpus_files:
             self.add_corpus(corpus_files)
         self.save_corpus_emb_dir = save_corpus_emb_dir
-        self.text_splitter = ChineseTextSplitter(chunk_size, chunk_overlap)
 
     def __str__(self):
         return f"Similarity model: {self.sim_model}, Generate model: {self.gen_model}"
@@ -360,8 +360,6 @@ class ChatPDF:
     def load_corpus_emb(self, emb_dir: str):
         logger.debug(f"Loading corpus embeddings from {emb_dir}")
         self.sim_model.load_corpus_embeddings(emb_dir)
-        if not self.sim_model.corpus:
-            self.sim_model.corpus = self.sim_model.similarities[0].corpus
 
 
 if __name__ == "__main__":
