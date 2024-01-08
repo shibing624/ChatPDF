@@ -51,7 +51,7 @@ class ChineseTextSplitter:
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
 
-    def split(self, text):
+    def split_text(self, text):
         if any("\u4e00" <= ch <= "\u9fff" for ch in text):
             # check if contains chinese characters
             chunks = jieba.lcut(text)
@@ -202,7 +202,7 @@ class ChatPDF:
             else:
                 corpus = self.extract_text_from_txt(doc_file)
             full_text = ' '.join(corpus)
-            chunks = self.text_splitter.split(full_text)
+            chunks = self.text_splitter.split_text(full_text)
             self.sim_model.add_corpus(chunks)
         self.corpus_files = files
 
