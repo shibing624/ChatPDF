@@ -4,7 +4,7 @@
   </a>
 
 <p align="center">
-    <h3>为ChatGLM/LLaMA等多种LLM提供了一个好用的基于PDF问答的图形界面</h3>
+    <h3>为ChatGLM/LLaMA等多种LLM提供了一个好用的基于PDF问答(RAG)的图形界面</h3>
     <p align="center">
       <a href="https://github.com/shibing624/ChatPDF/blob/main/LICENSE">
         <img alt="Tests Passing" src="https://img.shields.io/github/license/shibing624/ChatPDF" />
@@ -46,13 +46,13 @@ pip install -r requirements.txt
 
 请使用下面的命令。取决于你的系统，你可能需要用python或者python3命令。请确保你已经安装了Python。
 ```shell
-CUDA_VISIBLE_DEVICES=0 python chatpdf.py --gen_model_type baichaun --gen_model baichuan-inc/Baichuan-13B-Chat
+CUDA_VISIBLE_DEVICES=0 python chatpdf.py --gen_model_type llama --gen_model 01-ai/Yi-6B-Chat
 ```
 
 #### 启动Web服务
 
 ```shell
-CUDA_VISIBLE_DEVICES=0 python webui.py --gen_model_type llama --gen_model LinkSoul/Chinese-Llama-2-7b-4bit 
+CUDA_VISIBLE_DEVICES=0 python webui.py --gen_model_type llama --gen_model 01-ai/Yi-6B-Chat
 ```
 
 如果一切顺利，现在，你应该已经可以在浏览器地址栏中输入 http://localhost:7860 查看并使用 ChatPDF 了。
