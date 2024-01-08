@@ -66,10 +66,12 @@ if __name__ == '__main__':
             logger.debug(f"dislike: {data.value}")
 
 
-    chatbot_stream = gr.Chatbot(avatar_images=(
-        os.path.join(pwd_path, "assets/user.png"),
-        os.path.join(pwd_path, "assets/llama.png"),
-    ), bubble_full_width=False)
+    chatbot_stream = gr.Chatbot(
+        height=800,
+        avatar_images=(
+            os.path.join(pwd_path, "assets/user.png"),
+            os.path.join(pwd_path, "assets/llama.png"),
+        ), bubble_full_width=False)
     title = " 🎉ChatPDF WebUI🎉 "
     description = "Link in Github: [shibing624/ChatPDF](https://github.com/shibing624/ChatPDF)"
     css = """.toast-wrap { display: none !important } """
@@ -77,6 +79,7 @@ if __name__ == '__main__':
                 ['介绍下NLP']]
     chat_interface_stream = gr.ChatInterface(
         predict_stream,
+        textbox=gr.Textbox(lines=4, placeholder="Ask me question", scale=7),
         title=title,
         description=description,
         chatbot=chatbot_stream,
