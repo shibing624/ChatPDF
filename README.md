@@ -17,14 +17,14 @@
       </p>
     </p>
     <p align="center">
-      <img alt="Animation Demo" src="https://github.com/shibing624/ChatPDF/blob/main/docs/snap.png" width="600" />
+      <img alt="Animation Demo" src="https://github.com/shibing624/ChatPDF/blob/main/docs/snap.png" width="860" />
     </p>
   </p>
 </div>
 
 ## 原理
 
-<img src="https://github.com/shibing624/ChatPDF/blob/main/docs/chatpdf.jpg" width="800" />
+<img src="https://github.com/shibing624/ChatPDF/blob/main/docs/chatpdf.jpg" width="860" />
 
 ## 使用说明
 
