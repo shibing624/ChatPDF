@@ -321,7 +321,7 @@ class ChatPDF:
             max_length: int = 512,
             context_len: int = 2048,
             temperature: float = 0.7,
-            do_print: bool = True,
+            do_print: bool = False,
     ):
         """Query from corpus."""
         reference_results = []
