@@ -78,11 +78,12 @@ class ChatPDF:
             chunk_size: int = 250,
             chunk_overlap: int = 50,
     ):
-        default_device = torch.device('cpu')
         if torch.cuda.is_available():
             default_device = torch.device(0)
         elif torch.backends.mps.is_available():
             default_device = 'mps'
+        else:
+            default_device = torch.device('cpu')
         self.device = device or default_device
         self.text_splitter = ChineseTextSplitter(chunk_size, chunk_overlap)
         m1 = BertSimilarity(model_name_or_path=sim_model_name_or_path, device=self.device)
