@@ -299,7 +299,7 @@ class ChatPDF:
             reference_results = self._add_source_numbers(reference_results)
             context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
             prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
-            logger.debug(f"prompt: {prompt}")
+            # logger.debug(f"prompt: {prompt}")
         else:
             prompt = query
             logger.debug(prompt)
@@ -337,7 +337,7 @@ class ChatPDF:
             reference_results = self._add_source_numbers(reference_results)
             context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
             prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
-            logger.debug(f"prompt: {prompt}")
+            # logger.debug(f"prompt: {prompt}")
         else:
             prompt = query
         self.history.append([prompt, ''])
@@ -377,6 +377,8 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--int4", action='store_true', help="use int4 quantization")
     parser.add_argument("--int8", action='store_true', help="use int8 quantization")
+    parser.add_argument("--chunk_size", type=int, default=220)
+    parser.add_argument("--chunk_overlap", type=int, default=20)
     args = parser.parse_args()
     print(args)
     m = ChatPDF(
@@ -387,6 +389,8 @@ if __name__ == "__main__":
         device=args.device,
         int4=args.int4,
         int8=args.int8,
+        chunk_size=args.chunk_size,
+        chunk_overlap=args.chunk_overlap,
         corpus_files=args.corpus_files.split(','),
         save_corpus_emb_dir='./corpus_embs/',
     )

@@ -41,7 +41,9 @@ if __name__ == '__main__':
     parser.add_argument('--output_file', default='./predictions_result.jsonl', type=str)
     parser.add_argument("--int4", action='store_true', help="use int4 quantization")
     parser.add_argument("--int8", action='store_true', help="use int8 quantization")
-    parser.add_argument("--eval_batch_size", type=int, default=12)
+    parser.add_argument("--chunk_size", type=int, default=120)
+    parser.add_argument("--chunk_overlap", type=int, default=20)
+    parser.add_argument("--eval_batch_size", type=int, default=4)
     parser.add_argument("--test_size", type=int, default=-1)
     args = parser.parse_args()
     print(args)
@@ -55,6 +57,8 @@ if __name__ == '__main__':
         device=args.device,
         int4=args.int4,
         int8=args.int8,
+        chunk_size=args.chunk_size,
+        chunk_overlap=args.chunk_overlap,
     )
     print(f"chatpdf model: {model}")
 
@@ -63,6 +67,7 @@ if __name__ == '__main__':
         if i.endswith('.jsonl'):
             tmp_truth_dict = get_truth_dict(i)
             truth_dict.update(tmp_truth_dict)
+    print(f"truth_dict size: {len(truth_dict)}")
     # test data
     if args.query_file is None:
         examples = ["肛门病变可能是什么疾病的症状?", "膺窗穴的定位是什么?"]
@@ -87,15 +92,13 @@ if __name__ == '__main__':
             ],
             desc="Generating outputs",
     ):
-        responses = []
-        for i in batch:
-            response, reference_results = model.predict(i)
-            responses.append(response)
         results = []
-        for example, response in zip(batch, responses):
+        for example in batch:
+            response, reference_results = model.predict(example)
             truth = truth_dict.get(example, '')
             print(f"===")
             print(f"Input: {example}")
+            print(f"Reference: {reference_results}")
             print(f"Output: {response}")
             print(f"Truth: {truth}\n")
             results.append({"Input": example, "Output": response, "Truth": truth})

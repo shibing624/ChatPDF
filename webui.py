@@ -23,6 +23,8 @@ if __name__ == '__main__':
     parser.add_argument("--corpus_files", type=str, default="sample.pdf")
     parser.add_argument("--int4", action='store_true', help="use int4 quantization")
     parser.add_argument("--int8", action='store_true', help="use int8 quantization")
+    parser.add_argument("--chunk_size", type=int, default=220)
+    parser.add_argument("--chunk_overlap", type=int, default=20)
     parser.add_argument("--server_name", type=str, default="0.0.0.0")
     parser.add_argument("--server_port", type=int, default=8082)
     parser.add_argument("--share", action='store_true', help="share model")
@@ -38,6 +40,8 @@ if __name__ == '__main__':
         device=args.device,
         int4=args.int4,
         int8=args.int8,
+        chunk_size=args.chunk_size,
+        chunk_overlap=args.chunk_overlap,
     )
     logger.info(f"chatpdf model: {model}")
 
