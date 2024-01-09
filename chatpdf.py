@@ -155,7 +155,6 @@ class ChatPDF:
                 messages.append({'role': 'user', 'content': conv[0]})
             if conv and len(conv) > 1 and conv[1]:
                 messages.append({'role': 'assistant', 'content': conv[1]})
-        logger.debug(f"messages: {messages}")
         input_ids = self.tokenizer.apply_chat_template(
             conversation=messages,
             tokenize=True,
@@ -206,6 +205,8 @@ class ChatPDF:
             chunks = self.text_splitter.split_text(full_text)
             self.sim_model.add_corpus(chunks)
         self.corpus_files = files
+        logger.debug(f"files: {files}, corpus size: {len(self.sim_model.corpus)}, top3: "
+                     f"{list(self.sim_model.corpus.values())[:3]}")
 
     @staticmethod
     def get_file_hash(fpaths):
@@ -287,7 +288,6 @@ class ChatPDF:
         reference_results = []
         stop_str = self.tokenizer.eos_token if self.tokenizer.eos_token else "</s>"
         if self.sim_model.corpus:
-            logger.debug(f"corpus size: {len(self.sim_model.corpus)}, top3: {list(self.sim_model.corpus.values())[:3]}")
             sim_contents = self.sim_model.most_similar(query, topn=topn)
             # Get reference results
             for query_id, id_score_dict in sim_contents.items():
@@ -326,7 +326,6 @@ class ChatPDF:
         """Query from corpus."""
         reference_results = []
         if self.sim_model.corpus:
-            logger.debug(f"corpus size: {len(self.sim_model.corpus)}, top3: {list(self.sim_model.corpus.values())[:3]}")
             sim_contents = self.sim_model.most_similar(query, topn=topn)
             # Get reference results
             for query_id, id_score_dict in sim_contents.items():
