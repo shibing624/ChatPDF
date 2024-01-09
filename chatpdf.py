@@ -155,6 +155,7 @@ class ChatPDF:
                 messages.append({'role': 'user', 'content': conv[0]})
             if conv and len(conv) > 1 and conv[1]:
                 messages.append({'role': 'assistant', 'content': conv[1]})
+        logger.debug(f"messages: {messages}")
         input_ids = self.tokenizer.apply_chat_template(
             conversation=messages,
             tokenize=True,
@@ -201,7 +202,7 @@ class ChatPDF:
                 corpus = self.extract_text_from_markdown(doc_file)
             else:
                 corpus = self.extract_text_from_txt(doc_file)
-            full_text = ' '.join(corpus)
+            full_text = '\n'.join(corpus)
             chunks = self.text_splitter.split_text(full_text)
             self.sim_model.add_corpus(chunks)
         self.corpus_files = files
@@ -294,10 +295,11 @@ class ChatPDF:
                     reference_results.append(self.sim_model.corpus[corpus_id])
             if not reference_results:
                 yield '没有提供足够的相关信息', reference_results
+            self.history = []
             reference_results = self._add_source_numbers(reference_results)
             context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
             prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
-            logger.debug(prompt)
+            logger.debug(f"prompt: {prompt}")
         else:
             prompt = query
             logger.debug(prompt)
@@ -332,10 +334,11 @@ class ChatPDF:
                     reference_results.append(self.sim_model.corpus[corpus_id])
             if not reference_results:
                 return '没有提供足够的相关信息', reference_results
+            self.history = []
             reference_results = self._add_source_numbers(reference_results)
             context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
-            logger.debug(f"context_str: {context_str}")
             prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
+            logger.debug(f"prompt: {prompt}")
         else:
             prompt = query
         self.history.append([prompt, ''])
