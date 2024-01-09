@@ -67,8 +67,8 @@ class ChatPDF:
     def __init__(
             self,
             sim_model_name_or_path: str = "shibing624/text2vec-base-chinese",
-            gen_model_type: str = "baichuan",
-            gen_model_name_or_path: str = "baichuan-inc/Baichuan-13B-Chat",
+            gen_model_type: str = "auto",
+            gen_model_name_or_path: str = "01-ai/Yi-6B-Chat",
             lora_model_name_or_path: str = None,
             corpus_files: Union[str, List[str]] = None,
             save_corpus_emb_dir: str = "./corpus_embs/",
@@ -368,8 +368,8 @@ class ChatPDF:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--sim_model", type=str, default="shibing624/text2vec-base-chinese")
-    parser.add_argument("--gen_model_type", type=str, default="baichuan")
-    parser.add_argument("--gen_model", type=str, default="baichuan-inc/Baichuan-13B-Chat")
+    parser.add_argument("--gen_model_type", type=str, default="auto")
+    parser.add_argument("--gen_model", type=str, default="01-ai/Yi-6B-Chat")
     parser.add_argument("--lora_model", type=str, default=None)
     parser.add_argument("--corpus_files", type=str, default="sample.pdf")
     parser.add_argument("--device", type=str, default=None)
@@ -385,23 +385,7 @@ if __name__ == "__main__":
         device=args.device,
         int4=args.int4,
         int8=args.int8,
+        corpus_files=args.corpus_files.split(','),
         save_corpus_emb_dir='./corpus_embs/',
     )
-    m.predict('自然语言中的非平行迁移是指什么？', do_print=True)
-    files = args.corpus_files.split(',')
-    m.add_corpus(files=files)
-    m.predict('自然语言中的非平行迁移是指什么？', do_print=True)
-    save_dir = m.save_corpus_emb()
-    del m
-    m = ChatPDF(
-        sim_model_name_or_path=args.sim_model,
-        gen_model_type=args.gen_model_type,
-        gen_model_name_or_path=args.gen_model,
-        lora_model_name_or_path=args.lora_model,
-        device=args.device,
-        int4=args.int4,
-        int8=args.int8,
-        save_corpus_emb_dir='./corpus_embs/',
-    )
-    m.load_corpus_emb(save_dir)
     m.predict('自然语言中的非平行迁移是指什么？', do_print=True)
