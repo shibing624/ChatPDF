@@ -41,7 +41,7 @@ if __name__ == '__main__':
     parser.add_argument('--output_file', default='./predictions_result.jsonl', type=str)
     parser.add_argument("--int4", action='store_true', help="use int4 quantization")
     parser.add_argument("--int8", action='store_true', help="use int8 quantization")
-    parser.add_argument("--chunk_size", type=int, default=120)
+    parser.add_argument("--chunk_size", type=int, default=100)
     parser.add_argument("--chunk_overlap", type=int, default=20)
     parser.add_argument("--eval_batch_size", type=int, default=4)
     parser.add_argument("--test_size", type=int, default=-1)
