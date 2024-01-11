@@ -27,7 +27,7 @@
 - 本项目支持多种文件格式，包括PDF、docx、markdown、txt等
 - 本项目优化了RAG准确率
   - Chinese chunk切分优化，适配中英文混合文档
-  - embedding优化，使用text2vec的sentence embedding，支持第三方sentence embedding
+  - embedding优化，使用text2vec的sentence embedding，支持sentence embedding/字面相似度匹配算法
   - 检索匹配优化，引入jieba分词的rank_BM25，提升对query关键词的字面匹配，使用字面相似度+sentence embedding向量相似度加权获取corpus候选集
   - RAG底模优化，使用基于RAG微调的LLM模型，支持自定义RAG模型
 - 本项目基于gradio开发了RAG对话页面，支持流式对话
