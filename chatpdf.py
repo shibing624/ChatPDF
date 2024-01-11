@@ -432,12 +432,15 @@ class ChatPDF:
     def save_corpus_emb(self):
         dir_name = self.get_file_hash(self.corpus_files)
         save_dir = os.path.join(self.save_corpus_emb_dir, dir_name)
-        self.sim_model.save_corpus_embeddings(save_dir)
+        if hasattr(self.sim_model, 'save_corpus_embeddings'):
+            self.sim_model.save_corpus_embeddings(save_dir)
+            logger.debug(f"Saving corpus embeddings to {save_dir}")
         return save_dir
 
     def load_corpus_emb(self, emb_dir: str):
-        logger.debug(f"Loading corpus embeddings from {emb_dir}")
-        self.sim_model.load_corpus_embeddings(emb_dir)
+        if hasattr(self.sim_model, 'load_corpus_embeddings'):
+            logger.debug(f"Loading corpus embeddings from {emb_dir}")
+            self.sim_model.load_corpus_embeddings(emb_dir)
 
 
 if __name__ == "__main__":
