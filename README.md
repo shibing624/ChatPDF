@@ -4,7 +4,7 @@
   </a>
 
 <p align="center">
-    <h3>为LLM提供了一个好用的基于PDF问答(RAG)的图形界面</h3>
+    <h3>基于本地 LLM 做检索知识问答(RAG)</h3>
     <p align="center">
       <a href="https://github.com/shibing624/ChatPDF/blob/main/LICENSE">
         <img alt="Tests Passing" src="https://img.shields.io/github/license/shibing624/ChatPDF" />
@@ -83,3 +83,6 @@ CUDA_VISIBLE_DEVICES=0 python webui.py --gen_model_type llama --gen_model 01-ai/
 
 ## Reference
 - [imClumsyPanda/langchain-ChatGLM](https://github.com/imClumsyPanda/langchain-ChatGLM)
+
+#### 关联项目推荐
+- [shibing624/MedicalGPT](https://github.com/shibing624/MedicalGPT)：训练自己的GPT大模型，实现了包括增量预训练、有监督微调、RLHF(奖励建模、强化学习训练)和DPO(直接偏好优化)
