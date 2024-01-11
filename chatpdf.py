@@ -154,7 +154,7 @@ class ChatPDF:
             default_device = torch.device('cpu')
         self.device = device or default_device
         self.text_splitter = SentenceSplitter(chunk_size, chunk_overlap)
-        if similarity_model:
+        if similarity_model is not None:
             self.sim_model = similarity_model
         else:
             m1 = BertSimilarity(model_name_or_path="shibing624/text2vec-base-multilingual", device=self.device)
