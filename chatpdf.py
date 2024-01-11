@@ -134,6 +134,7 @@ class ChatPDF:
     ):
         """
         Init RAG model.
+        :param similarity_model: similarity model, default None, if set, will use it instead of EnsembleSimilarity
         :param generate_model_type: generate model type
         :param generate_model_name_or_path: generate model name or path
         :param lora_model_name_or_path: lora model name or path
@@ -144,7 +145,6 @@ class ChatPDF:
         :param int4: use int4 quantization, default False
         :param chunk_size: chunk size, default 250
         :param chunk_overlap: chunk overlap, default 50
-        :param similarity_model: similarity model, default None, if set, will use this model instead of sim_model_name_or_path
         """
         if torch.cuda.is_available():
             default_device = torch.device(0)
