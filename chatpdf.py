@@ -454,8 +454,9 @@ if __name__ == "__main__":
     parser.add_argument("--chunk_overlap", type=int, default=20)
     args = parser.parse_args()
     print(args)
+    sim_model = BertSimilarity(model_name_or_path=args.sim_model, device=args.device)
     m = ChatPDF(
-        sim_model_name_or_path=args.sim_model,
+        similarity_model=sim_model,
         generate_model_type=args.gen_model_type,
         generate_model_name_or_path=args.gen_model,
         lora_model_name_or_path=args.lora_model,
