@@ -133,6 +133,21 @@ class ChatPDF:
             chunk_overlap: int = 50,
             similarity_model: SimilarityABC = None,
     ):
+        """
+        Init RAG model.
+        :param sim_model_name_or_path: similarity model name or path
+        :param gen_model_type: generate model type
+        :param gen_model_name_or_path: generate model name or path
+        :param lora_model_name_or_path: lora model name or path
+        :param corpus_files: corpus files
+        :param save_corpus_emb_dir: save corpus embeddings dir, default ./corpus_embs/
+        :param device: device, default None, auto select gpu or cpu
+        :param int8: use int8 quantization, default False
+        :param int4: use int4 quantization, default False
+        :param chunk_size: chunk size, default 250
+        :param chunk_overlap: chunk overlap, default 50
+        :param similarity_model: similarity model, default None, if set, will use this model instead of sim_model_name_or_path
+        """
         if torch.cuda.is_available():
             default_device = torch.device(0)
         elif torch.backends.mps.is_available():
