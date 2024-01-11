@@ -8,6 +8,7 @@ import json
 import os
 import time
 
+from similarities import BM25Similarity
 from tqdm import tqdm
 
 from chatpdf import ChatPDF
@@ -31,7 +32,6 @@ def get_truth_dict(jsonl_file_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sim_model", type=str, default="shibing624/text2vec-base-chinese")
     parser.add_argument("--gen_model_type", type=str, default="auto")
     parser.add_argument("--gen_model", type=str, default="01-ai/Yi-6B-Chat")
     parser.add_argument("--lora_model", type=str, default=None)
@@ -47,11 +47,11 @@ if __name__ == '__main__':
     parser.add_argument("--test_size", type=int, default=-1)
     args = parser.parse_args()
     print(args)
-
+    sim_model = BM25Similarity()
     model = ChatPDF(
-        sim_model_name_or_path=args.sim_model,
-        gen_model_type=args.gen_model_type,
-        gen_model_name_or_path=args.gen_model,
+        similarity_model=sim_model,
+        generate_model_type=args.gen_model_type,
+        generate_model_name_or_path=args.gen_model,
         lora_model_name_or_path=args.lora_model,
         corpus_files=args.corpus_files.split(','),
         device=args.device,

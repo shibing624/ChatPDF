@@ -120,9 +120,9 @@ class SentenceSplitter:
 class ChatPDF:
     def __init__(
             self,
-            sim_model_name_or_path: str = "shibing624/text2vec-base-chinese",
-            gen_model_type: str = "auto",
-            gen_model_name_or_path: str = "01-ai/Yi-6B-Chat",
+            similarity_model: SimilarityABC = None,
+            generate_model_type: str = "auto",
+            generate_model_name_or_path: str = "01-ai/Yi-6B-Chat",
             lora_model_name_or_path: str = None,
             corpus_files: Union[str, List[str]] = None,
             save_corpus_emb_dir: str = "./corpus_embs/",
@@ -131,13 +131,11 @@ class ChatPDF:
             int4: bool = False,
             chunk_size: int = 250,
             chunk_overlap: int = 50,
-            similarity_model: SimilarityABC = None,
     ):
         """
         Init RAG model.
-        :param sim_model_name_or_path: similarity model name or path
-        :param gen_model_type: generate model type
-        :param gen_model_name_or_path: generate model name or path
+        :param generate_model_type: generate model type
+        :param generate_model_name_or_path: generate model name or path
         :param lora_model_name_or_path: lora model name or path
         :param corpus_files: corpus files
         :param save_corpus_emb_dir: save corpus embeddings dir, default ./corpus_embs/
@@ -156,13 +154,16 @@ class ChatPDF:
             default_device = torch.device('cpu')
         self.device = device or default_device
         self.text_splitter = SentenceSplitter(chunk_size, chunk_overlap)
-        m1 = BertSimilarity(model_name_or_path=sim_model_name_or_path, device=self.device)
-        m2 = BM25Similarity()
-        default_sim_model = EnsembleSimilarity(similarities=[m1, m2], weights=[0.2, 0.8], c=2)
-        self.sim_model = default_sim_model if similarity_model is None else similarity_model
+        if similarity_model:
+            self.sim_model = similarity_model
+        else:
+            m1 = BertSimilarity(model_name_or_path="shibing624/text2vec-base-multilingual", device=self.device)
+            m2 = BM25Similarity()
+            default_sim_model = EnsembleSimilarity(similarities=[m1, m2], weights=[0.5, 0.5], c=2)
+            self.sim_model = default_sim_model
         self.gen_model, self.tokenizer = self._init_gen_model(
-            gen_model_type,
-            gen_model_name_or_path,
+            generate_model_type,
+            generate_model_name_or_path,
             peft_name=lora_model_name_or_path,
             int8=int8,
             int4=int4,
@@ -455,8 +456,8 @@ if __name__ == "__main__":
     print(args)
     m = ChatPDF(
         sim_model_name_or_path=args.sim_model,
-        gen_model_type=args.gen_model_type,
-        gen_model_name_or_path=args.gen_model,
+        generate_model_type=args.gen_model_type,
+        generate_model_name_or_path=args.gen_model,
         lora_model_name_or_path=args.lora_model,
         device=args.device,
         int4=args.int4,
