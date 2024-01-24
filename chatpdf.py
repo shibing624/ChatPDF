@@ -191,6 +191,7 @@ class ChatPDF:
         if rerank_model_name_or_path:
             self.rerank_tokenizer = AutoTokenizer.from_pretrained(rerank_model_name_or_path)
             self.rerank_model = AutoModelForSequenceClassification.from_pretrained(rerank_model_name_or_path)
+            self.rerank_model.to(self.device)
             self.rerank_model.eval()
         self.enable_history = enable_history
         self.topn = topn
@@ -378,7 +379,8 @@ class ChatPDF:
             pairs.append([query, reference])
         with torch.no_grad():
             inputs = self.rerank_tokenizer(pairs, padding=True, truncation=True, return_tensors='pt', max_length=512)
-            scores = self.rerank_model(**inputs, return_dict=True).logits.view(-1, ).float()
+            inputs_on_device = {k: v.to(self.rerank_model.device) for k, v in inputs.items()}
+            scores = self.rerank_model(**inputs_on_device, return_dict=True).logits.view(-1, ).float()
         logger.debug(scores)
         return scores
 
