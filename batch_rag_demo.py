@@ -42,7 +42,9 @@ if __name__ == '__main__':
     parser.add_argument("--int4", action='store_true', help="use int4 quantization")
     parser.add_argument("--int8", action='store_true', help="use int8 quantization")
     parser.add_argument("--chunk_size", type=int, default=100)
-    parser.add_argument("--chunk_overlap", type=int, default=20)
+    parser.add_argument("--chunk_overlap", type=int, default=0)
+    parser.add_argument("--rerank_model_name", type=str, default="")
+    parser.add_argument("--num_expand_context_chunk", type=int, default=1)
     parser.add_argument("--eval_batch_size", type=int, default=4)
     parser.add_argument("--test_size", type=int, default=-1)
     args = parser.parse_args()
@@ -59,6 +61,8 @@ if __name__ == '__main__':
         int8=args.int8,
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
+        rerank_model_name_or_path=args.rerank_model_name,
+        num_expand_context_chunk=args.num_expand_context_chunk,
     )
     print(f"chatpdf model: {model}")
 

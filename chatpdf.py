@@ -30,6 +30,7 @@ from transformers import (
     LlamaForCausalLM,
     TextIteratorStreamer,
     GenerationConfig,
+    AutoModelForSequenceClassification,
 )
 
 jieba.setLogLevel("ERROR")
@@ -130,7 +131,11 @@ class ChatPDF:
             int8: bool = False,
             int4: bool = False,
             chunk_size: int = 250,
-            chunk_overlap: int = 50,
+            chunk_overlap: int = 0,
+            rerank_model_name_or_path: str = None,
+            enable_history: bool = False,
+            num_expand_context_chunk: int = 2,
+            topn: int = 5,
     ):
         """
         Init RAG model.
@@ -144,7 +149,11 @@ class ChatPDF:
         :param int8: use int8 quantization, default False
         :param int4: use int4 quantization, default False
         :param chunk_size: chunk size, default 250
-        :param chunk_overlap: chunk overlap, default 50
+        :param chunk_overlap: chunk overlap, default 0, can not set to > 0 if num_expand_context_chunk > 0
+        :param rerank_model_name_or_path: rerank model name or path, default 'BAAI/bge-reranker-base'
+        :param enable_history: enable history, default False
+        :param num_expand_context_chunk: num expand context chunk, default 2, if set to 0, will not expand context chunk
+        :param topn: topn, default 5, similarity model search topn corpus chunks
         """
         if torch.cuda.is_available():
             default_device = torch.device(0)
@@ -153,6 +162,10 @@ class ChatPDF:
         else:
             default_device = torch.device('cpu')
         self.device = device or default_device
+        if num_expand_context_chunk > 0 and chunk_overlap > 0:
+            logger.warning(f" 'num_expand_context_chunk' and 'chunk_overlap' cannot both be greater than zero. "
+                           f" 'chunk_overlap' has been set to zero by default.")
+            chunk_overlap = 0
         self.text_splitter = SentenceSplitter(chunk_size, chunk_overlap)
         if similarity_model is not None:
             self.sim_model = similarity_model
@@ -173,6 +186,15 @@ class ChatPDF:
         if corpus_files:
             self.add_corpus(corpus_files)
         self.save_corpus_emb_dir = save_corpus_emb_dir
+        if rerank_model_name_or_path is None:
+            rerank_model_name_or_path = "BAAI/bge-reranker-base"
+        if rerank_model_name_or_path:
+            self.rerank_tokenizer = AutoTokenizer.from_pretrained(rerank_model_name_or_path)
+            self.rerank_model = AutoModelForSequenceClassification.from_pretrained(rerank_model_name_or_path)
+            self.rerank_model.eval()
+        self.enable_history = enable_history
+        self.topn = topn
+        self.num_expand_context_chunk = num_expand_context_chunk
 
     def __str__(self):
         return f"Similarity model: {self.sim_model}, Generate model: {self.gen_model}"
@@ -349,26 +371,69 @@ class ChatPDF:
         """Add source numbers to a list of strings."""
         return [f'[{idx + 1}]\t "{item}"' for idx, item in enumerate(lst)]
 
+    def get_reranker_score(self, query: str, reference_results: List[str]):
+        """Get reranker score."""
+        pairs = []
+        for reference in reference_results:
+            pairs.append([query, reference])
+        with torch.no_grad():
+            inputs = self.rerank_tokenizer(pairs, padding=True, truncation=True, return_tensors='pt', max_length=512)
+            scores = self.rerank_model(**inputs, return_dict=True).logits.view(-1, ).float()
+        logger.debug(scores)
+        return scores
+
+    def get_reference_results(self, query: str):
+        """
+        Get reference results.
+            1. Similarity model get similar chunks
+            2. Rerank similar chunks
+            3. Expand reference context chunk
+        :param query:
+        :return:
+        """
+        reference_results = []
+        sim_contents = self.sim_model.most_similar(query, topn=self.topn)
+        # Get reference results from corpus
+        hit_chunk_dict = dict()
+        for query_id, id_score_dict in sim_contents.items():
+            for corpus_id, s in id_score_dict.items():
+                hit_chunk = self.sim_model.corpus[corpus_id]
+                reference_results.append(hit_chunk)
+                hit_chunk_dict[corpus_id] = hit_chunk
+
+        if reference_results:
+            if self.rerank_model is not None:
+                # Rerank reference results
+                rerank_scores = self.get_reranker_score(query, reference_results)
+                reference_results = [reference for reference, ref_score in zip(reference_results, rerank_scores) if
+                                     ref_score > 0]
+                hit_chunk_dict = {corpus_id: hit_chunk for corpus_id, hit_chunk in hit_chunk_dict.items() if
+                                  hit_chunk in reference_results}
+            # Expand reference context chunk
+            if self.num_expand_context_chunk > 0:
+                reference_results = []
+                for corpus_id, hit_chunk in hit_chunk_dict.items():
+                    expanded_reference = self.sim_model.corpus.get(corpus_id - 1, '') + hit_chunk
+                    for i in range(self.num_expand_context_chunk):
+                        expanded_reference += self.sim_model.corpus.get(corpus_id + i + 1, '')
+                    reference_results.append(expanded_reference)
+        return reference_results
+
     def predict_stream(
             self,
             query: str,
-            topn: int = 5,
             max_length: int = 512,
             context_len: int = 2048,
             temperature: float = 0.7,
     ):
         """Generate predictions stream."""
-        reference_results = []
         stop_str = self.tokenizer.eos_token if self.tokenizer.eos_token else "</s>"
+        if not self.enable_history:
+            self.history = []
         if self.sim_model.corpus:
-            sim_contents = self.sim_model.most_similar(query, topn=topn)
-            # Get reference results
-            for query_id, id_score_dict in sim_contents.items():
-                for corpus_id, s in id_score_dict.items():
-                    reference_results.append(self.sim_model.corpus[corpus_id])
+            reference_results = self.get_reference_results(query)
             if not reference_results:
                 yield '没有提供足够的相关信息', reference_results
-            self.history = []
             reference_results = self._add_source_numbers(reference_results)
             context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
             prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
@@ -390,7 +455,6 @@ class ChatPDF:
     def predict(
             self,
             query: str,
-            topn: int = 5,
             max_length: int = 512,
             context_len: int = 2048,
             temperature: float = 0.7,
@@ -398,15 +462,13 @@ class ChatPDF:
     ):
         """Query from corpus."""
         reference_results = []
+        if not self.enable_history:
+            self.history = []
         if self.sim_model.corpus:
-            sim_contents = self.sim_model.most_similar(query, topn=topn)
-            # Get reference results
-            for query_id, id_score_dict in sim_contents.items():
-                for corpus_id, s in id_score_dict.items():
-                    reference_results.append(self.sim_model.corpus[corpus_id])
+            reference_results = self.get_reference_results(query)
+
             if not reference_results:
                 return '没有提供足够的相关信息', reference_results
-            self.history = []
             reference_results = self._add_source_numbers(reference_results)
             context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
             prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
@@ -455,6 +517,7 @@ if __name__ == "__main__":
     parser.add_argument("--int8", action='store_true', help="use int8 quantization")
     parser.add_argument("--chunk_size", type=int, default=220)
     parser.add_argument("--chunk_overlap", type=int, default=20)
+    parser.add_argument("--rerank_model_name", type=str, default="BAAI/bge-reranker-base")
     args = parser.parse_args()
     print(args)
     sim_model = BertSimilarity(model_name_or_path=args.sim_model, device=args.device)
