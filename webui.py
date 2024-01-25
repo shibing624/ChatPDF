@@ -16,14 +16,16 @@ pwd_path = os.path.abspath(os.path.dirname(__file__))
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--gen_model_type", type=str, default="auto")
-    parser.add_argument("--gen_model", type=str, default="01-ai/Yi-6B-Chat")
+    parser.add_argument("--gen_model_model", type=str, default="01-ai/Yi-6B-Chat")
     parser.add_argument("--lora_model", type=str, default=None)
+    parser.add_argument("--rerank_model_name", type=str, default="maidalun1020/bce-reranker-base_v1")
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--corpus_files", type=str, default="sample.pdf")
     parser.add_argument("--int4", action='store_true', help="use int4 quantization")
     parser.add_argument("--int8", action='store_true', help="use int8 quantization")
     parser.add_argument("--chunk_size", type=int, default=220)
-    parser.add_argument("--chunk_overlap", type=int, default=20)
+    parser.add_argument("--chunk_overlap", type=int, default=0)
+    parser.add_argument("--num_expand_context_chunk", type=int, default=1)
     parser.add_argument("--server_name", type=str, default="0.0.0.0")
     parser.add_argument("--server_port", type=int, default=8082)
     parser.add_argument("--share", action='store_true', help="share model")
@@ -32,7 +34,7 @@ if __name__ == '__main__':
 
     model = ChatPDF(
         generate_model_type=args.gen_model_type,
-        generate_model_name_or_path=args.gen_model,
+        generate_model_name_or_path=args.gen_model_model,
         lora_model_name_or_path=args.lora_model,
         corpus_files=args.corpus_files.split(','),
         device=args.device,
@@ -40,6 +42,8 @@ if __name__ == '__main__':
         int8=args.int8,
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
+        num_expand_context_chunk=args.num_expand_context_chunk,
+        rerank_model_name_or_path=args.rerank_model_name,
     )
     logger.info(f"chatpdf model: {model}")
 
@@ -55,7 +59,7 @@ if __name__ == '__main__':
 
     def predict(message, history):
         logger.debug(message)
-        response, reference_results = model.predict(message, do_print=True)
+        response, reference_results = model.predict(message)
         r = response + "\n\n" + '\n'.join(reference_results)
         logger.debug(r)
         return r

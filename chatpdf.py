@@ -521,7 +521,7 @@ if __name__ == "__main__":
     parser.add_argument("--int8", action='store_true', help="use int8 quantization")
     parser.add_argument("--chunk_size", type=int, default=220)
     parser.add_argument("--chunk_overlap", type=int, default=0)
-    parser.add_argument("--num_expand_context_chunk", type=int, default=2)
+    parser.add_argument("--num_expand_context_chunk", type=int, default=1)
     args = parser.parse_args()
     print(args)
     sim_model = BertSimilarity(model_name_or_path=args.sim_model_name, device=args.device)
