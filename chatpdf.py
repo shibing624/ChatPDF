@@ -135,7 +135,8 @@ class ChatPDF:
             rerank_model_name_or_path: str = None,
             enable_history: bool = False,
             num_expand_context_chunk: int = 2,
-            topn: int = 5,
+            similarity_top_k: int = 10,
+            rerank_top_k: int = 3,
     ):
         """
         Init RAG model.
@@ -153,7 +154,8 @@ class ChatPDF:
         :param rerank_model_name_or_path: rerank model name or path, default 'BAAI/bge-reranker-base'
         :param enable_history: enable history, default False
         :param num_expand_context_chunk: num expand context chunk, default 2, if set to 0, will not expand context chunk
-        :param topn: topn, default 5, similarity model search topn corpus chunks
+        :param similarity_top_k: similarity_top_k, default 5, similarity model search k corpus chunks
+        :param rerank_top_k: rerank_top_k, default 3, rerank model search k corpus chunks
         """
         if torch.cuda.is_available():
             default_device = torch.device(0)
@@ -194,8 +196,9 @@ class ChatPDF:
             self.rerank_model.to(self.device)
             self.rerank_model.eval()
         self.enable_history = enable_history
-        self.topn = topn
+        self.similarity_top_k = similarity_top_k
         self.num_expand_context_chunk = num_expand_context_chunk
+        self.rerank_top_k = rerank_top_k
 
     def __str__(self):
         return f"Similarity model: {self.sim_model}, Generate model: {self.gen_model}"
@@ -381,7 +384,7 @@ class ChatPDF:
             inputs = self.rerank_tokenizer(pairs, padding=True, truncation=True, return_tensors='pt', max_length=512)
             inputs_on_device = {k: v.to(self.rerank_model.device) for k, v in inputs.items()}
             scores = self.rerank_model(**inputs_on_device, return_dict=True).logits.view(-1, ).float()
-        logger.debug(scores)
+
         return scores
 
     def get_reference_results(self, query: str):
@@ -394,7 +397,7 @@ class ChatPDF:
         :return:
         """
         reference_results = []
-        sim_contents = self.sim_model.most_similar(query, topn=self.topn)
+        sim_contents = self.sim_model.most_similar(query, topn=self.similarity_top_k)
         # Get reference results from corpus
         hit_chunk_dict = dict()
         for query_id, id_score_dict in sim_contents.items():
@@ -407,18 +410,21 @@ class ChatPDF:
             if self.rerank_model is not None:
                 # Rerank reference results
                 rerank_scores = self.get_reranker_score(query, reference_results)
-                reference_results = [reference for reference, ref_score in zip(reference_results, rerank_scores) if
-                                     ref_score > 0]
+                logger.debug(f"rerank_scores: {rerank_scores}")
+                # Get rerank top k chunks
+                reference_results = [reference for reference, score in sorted(
+                    zip(reference_results, rerank_scores), key=lambda x: x[1], reverse=True)][:self.rerank_top_k]
                 hit_chunk_dict = {corpus_id: hit_chunk for corpus_id, hit_chunk in hit_chunk_dict.items() if
                                   hit_chunk in reference_results}
             # Expand reference context chunk
             if self.num_expand_context_chunk > 0:
-                reference_results = []
+                new_reference_results = []
                 for corpus_id, hit_chunk in hit_chunk_dict.items():
                     expanded_reference = self.sim_model.corpus.get(corpus_id - 1, '') + hit_chunk
                     for i in range(self.num_expand_context_chunk):
                         expanded_reference += self.sim_model.corpus.get(corpus_id + i + 1, '')
-                    reference_results.append(expanded_reference)
+                    new_reference_results.append(expanded_reference)
+                reference_results = new_reference_results
         return reference_results
 
     def predict_stream(
@@ -460,7 +466,6 @@ class ChatPDF:
             max_length: int = 512,
             context_len: int = 2048,
             temperature: float = 0.7,
-            do_print: bool = False,
     ):
         """Query from corpus."""
         reference_results = []
@@ -485,10 +490,6 @@ class ChatPDF:
                 context_len=context_len,
         ):
             response += new_text
-            if do_print:
-                print(new_text, end="", flush=True)
-        if do_print:
-            print("", flush=True)
         response = response.strip()
         self.history[-1][1] = response
         return response, reference_results
@@ -509,10 +510,11 @@ class ChatPDF:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sim_model", type=str, default="shibing624/text2vec-base-chinese")
+    parser.add_argument("--sim_model_name", type=str, default="shibing624/text2vec-base-multilingual")
     parser.add_argument("--gen_model_type", type=str, default="auto")
-    parser.add_argument("--gen_model", type=str, default="01-ai/Yi-6B-Chat")
+    parser.add_argument("--gen_model_name", type=str, default="01-ai/Yi-6B-Chat")
     parser.add_argument("--lora_model", type=str, default=None)
+    parser.add_argument("--rerank_model_name", type=str, default="maidalun1020/bce-reranker-base_v1")
     parser.add_argument("--corpus_files", type=str, default="sample.pdf")
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--int4", action='store_true', help="use int4 quantization")
@@ -520,15 +522,13 @@ if __name__ == "__main__":
     parser.add_argument("--chunk_size", type=int, default=220)
     parser.add_argument("--chunk_overlap", type=int, default=0)
     parser.add_argument("--num_expand_context_chunk", type=int, default=2)
-    parser.add_argument("--topn", type=int, default=3)
-    parser.add_argument("--rerank_model_name", type=str, default="BAAI/bge-reranker-base")
     args = parser.parse_args()
     print(args)
-    sim_model = BertSimilarity(model_name_or_path=args.sim_model, device=args.device)
+    sim_model = BertSimilarity(model_name_or_path=args.sim_model_name, device=args.device)
     m = ChatPDF(
         similarity_model=sim_model,
         generate_model_type=args.gen_model_type,
-        generate_model_name_or_path=args.gen_model,
+        generate_model_name_or_path=args.gen_model_name,
         lora_model_name_or_path=args.lora_model,
         device=args.device,
         int4=args.int4,
@@ -538,6 +538,6 @@ if __name__ == "__main__":
         corpus_files=args.corpus_files.split(','),
         num_expand_context_chunk=args.num_expand_context_chunk,
         rerank_model_name_or_path=args.rerank_model_name,
-        topn=args.topn,
     )
-    m.predict('自然语言中的非平行迁移是指什么？', do_print=True)
+    r, refs = m.predict('自然语言中的非平行迁移是指什么？')
+    print(r, refs)

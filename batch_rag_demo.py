@@ -33,8 +33,9 @@ def get_truth_dict(jsonl_file_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--gen_model_type", type=str, default="auto")
-    parser.add_argument("--gen_model", type=str, default="01-ai/Yi-6B-Chat")
+    parser.add_argument("--gen_model_name", type=str, default="01-ai/Yi-6B-Chat")
     parser.add_argument("--lora_model", type=str, default=None)
+    parser.add_argument("--rerank_model_name", type=str, default="")
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--corpus_files", type=str, default="medical_corpus.jsonl")
     parser.add_argument('--query_file', default="medical_query.txt", type=str, help="query file, one query per line")
@@ -43,7 +44,6 @@ if __name__ == '__main__':
     parser.add_argument("--int8", action='store_true', help="use int8 quantization")
     parser.add_argument("--chunk_size", type=int, default=100)
     parser.add_argument("--chunk_overlap", type=int, default=0)
-    parser.add_argument("--rerank_model_name", type=str, default="")
     parser.add_argument("--num_expand_context_chunk", type=int, default=1)
     parser.add_argument("--eval_batch_size", type=int, default=4)
     parser.add_argument("--test_size", type=int, default=-1)
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     model = ChatPDF(
         similarity_model=sim_model,
         generate_model_type=args.gen_model_type,
-        generate_model_name_or_path=args.gen_model,
+        generate_model_name_or_path=args.gen_model_name,
         lora_model_name_or_path=args.lora_model,
         corpus_files=args.corpus_files.split(','),
         device=args.device,
