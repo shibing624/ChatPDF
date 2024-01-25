@@ -518,7 +518,9 @@ if __name__ == "__main__":
     parser.add_argument("--int4", action='store_true', help="use int4 quantization")
     parser.add_argument("--int8", action='store_true', help="use int8 quantization")
     parser.add_argument("--chunk_size", type=int, default=220)
-    parser.add_argument("--chunk_overlap", type=int, default=20)
+    parser.add_argument("--chunk_overlap", type=int, default=0)
+    parser.add_argument("--num_expand_context_chunk", type=int, default=2)
+    parser.add_argument("--topn", type=int, default=3)
     parser.add_argument("--rerank_model_name", type=str, default="BAAI/bge-reranker-base")
     args = parser.parse_args()
     print(args)
@@ -534,5 +536,8 @@ if __name__ == "__main__":
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
         corpus_files=args.corpus_files.split(','),
+        num_expand_context_chunk=args.num_expand_context_chunk,
+        rerank_model_name_or_path=args.rerank_model_name,
+        topn=args.topn,
     )
     m.predict('自然语言中的非平行迁移是指什么？', do_print=True)
