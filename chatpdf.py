@@ -35,6 +35,9 @@ from transformers import (
 
 jieba.setLogLevel("ERROR")
 
+from huggingface_hub import login
+login(token = 'your—-token')
+
 MODEL_CLASSES = {
     "bloom": (BloomForCausalLM, BloomTokenizerFast),
     "chatglm": (AutoModel, AutoTokenizer),
