@@ -16,7 +16,7 @@ pwd_path = os.path.abspath(os.path.dirname(__file__))
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--gen_model_type", type=str, default="auto")
-    parser.add_argument("--gen_model_model", type=str, default="01-ai/Yi-6B-Chat")
+    parser.add_argument("--gen_model_name", type=str, default="01-ai/Yi-6B-Chat")
     parser.add_argument("--lora_model", type=str, default=None)
     parser.add_argument("--rerank_model_name", type=str, default="maidalun1020/bce-reranker-base_v1")
     parser.add_argument("--device", type=str, default=None)
@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     model = ChatPDF(
         generate_model_type=args.gen_model_type,
-        generate_model_name_or_path=args.gen_model_model,
+        generate_model_name_or_path=args.gen_model_name,
         lora_model_name_or_path=args.lora_model,
         corpus_files=args.corpus_files.split(','),
         device=args.device,

@@ -56,13 +56,13 @@ pip install -r requirements.txt
 
 请使用下面的命令。取决于你的系统，你可能需要用python或者python3命令。请确保你已经安装了Python。
 ```shell
-CUDA_VISIBLE_DEVICES=0 python chatpdf.py --gen_model_type auto --gen_model_model 01-ai/Yi-6B-Chat --corpus_files sample.pdf
+CUDA_VISIBLE_DEVICES=0 python chatpdf.py --gen_model_type auto --gen_model_name 01-ai/Yi-6B-Chat --corpus_files sample.pdf
 ```
 
 #### 启动Web服务
 
 ```shell
-CUDA_VISIBLE_DEVICES=0 python webui.py --gen_model_type auto --gen_model_model 01-ai/Yi-6B-Chat --corpus_files sample.pdf --share
+CUDA_VISIBLE_DEVICES=0 python webui.py --gen_model_type auto --gen_model_name 01-ai/Yi-6B-Chat --corpus_files sample.pdf --share
 ```
 
 如果一切顺利，现在，你应该已经可以在浏览器地址栏中输入 http://localhost:7860 查看并使用 ChatPDF 了。
