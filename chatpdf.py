@@ -445,7 +445,7 @@ class ChatPDF:
             reference_results = self._add_source_numbers(reference_results)
             context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
             prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
-            # logger.debug(f"prompt: {prompt}")
+            logger.debug(f"prompt: {prompt}")
         else:
             prompt = query
             logger.debug(prompt)
@@ -479,7 +479,7 @@ class ChatPDF:
             reference_results = self._add_source_numbers(reference_results)
             context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
             prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
-            # logger.debug(f"prompt: {prompt}")
+            logger.debug(f"prompt: {prompt}")
         else:
             prompt = query
         self.history.append([prompt, ''])
@@ -514,7 +514,7 @@ if __name__ == "__main__":
     parser.add_argument("--gen_model_type", type=str, default="auto")
     parser.add_argument("--gen_model_name", type=str, default="01-ai/Yi-6B-Chat")
     parser.add_argument("--lora_model", type=str, default=None)
-    parser.add_argument("--rerank_model_name", type=str, default="maidalun1020/bce-reranker-base_v1")
+    parser.add_argument("--rerank_model_name", type=str, default="")
     parser.add_argument("--corpus_files", type=str, default="sample.pdf")
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--int4", action='store_true', help="use int4 quantization")

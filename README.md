@@ -55,7 +55,7 @@ pip install -r requirements.txt
 
 请使用下面的命令。取决于你的系统，你可能需要用python或者python3命令。请确保你已经安装了Python。
 ```shell
-CUDA_VISIBLE_DEVICES=0 python chatpdf.py --gen_model_type auto --gen_model_model 01-ai/Yi-6B-Chat --corpus_files sample.pdf --rerank_model_name maidalun1020/bce-reranker-base_v1
+CUDA_VISIBLE_DEVICES=0 python chatpdf.py --gen_model_type auto --gen_model_model 01-ai/Yi-6B-Chat --corpus_files sample.pdf
 ```
 
 #### 启动Web服务
