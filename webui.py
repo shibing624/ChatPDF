@@ -65,13 +65,6 @@ if __name__ == '__main__':
         return r
 
 
-    def vote(data: gr.LikeData):
-        if data.liked:
-            logger.debug(f"like: {data.value}")
-        else:
-            logger.debug(f"dislike: {data.value}")
-
-
     chatbot_stream = gr.Chatbot(
         height=600,
         avatar_images=(
@@ -94,7 +87,6 @@ if __name__ == '__main__':
     )
 
     with gr.Blocks() as demo:
-        chatbot_stream.like(vote, None, None)
         chat_interface_stream.render()
     demo.queue().launch(
         server_name=args.server_name, server_port=args.server_port, share=args.share
