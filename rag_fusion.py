@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 @author:XuMing(xuming624@qq.com)
-@description: 
+@description:
+pip install langchain langchain-community langchain-openai
 """
 
 from typing import List
@@ -76,9 +77,9 @@ class RagFusion:
         # RAG pipeline
         rag_chain = (
                 {
-                    "context": {
-                                   "original_query": RunnablePassthrough()} | self.requery_prompt | self.requery_model | StrOutputParser() | (
-                                   lambda x: x.split("\n")) | self.retriever.map() | reciprocal_rank_fusion,
+                    "context": {"original_query": RunnablePassthrough()} | self.requery_prompt |
+                               self.requery_model | StrOutputParser() | (lambda x: x.split("\n")) |
+                               self.retriever.map() | reciprocal_rank_fusion,
                     "question": RunnablePassthrough()
                 }
                 | self.rag_prompt
