@@ -33,7 +33,7 @@ jieba.setLogLevel("ERROR")
 
 # 下载gated 模型
 from huggingface_hub import login
-login(token = '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')
+login(token = 'your-token')
 
 MODEL_CLASSES = {
     "bloom": (BloomForCausalLM, BloomTokenizerFast),
