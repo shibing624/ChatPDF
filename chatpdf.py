@@ -160,7 +160,7 @@ class ChatPDF:
         if torch.cuda.is_available():
             default_device = torch.device(0)
         elif torch.backends.mps.is_available():
-            default_device = 'mps'
+            default_device = torch.device('cpu')
         else:
             default_device = torch.device('cpu')
         self.device = device or default_device
