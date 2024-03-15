@@ -195,6 +195,9 @@ class ChatPDF:
             self.rerank_model = AutoModelForSequenceClassification.from_pretrained(rerank_model_name_or_path)
             self.rerank_model.to(self.device)
             self.rerank_model.eval()
+        else:
+            self.rerank_model = None
+            self.rerank_tokenizer = None
         self.enable_history = enable_history
         self.similarity_top_k = similarity_top_k
         self.num_expand_context_chunk = num_expand_context_chunk
@@ -375,7 +378,7 @@ class ChatPDF:
         """Add source numbers to a list of strings."""
         return [f'[{idx + 1}]\t "{item}"' for idx, item in enumerate(lst)]
 
-    def get_reranker_score(self, query: str, reference_results: List[str]):
+    def _get_reranker_score(self, query: str, reference_results: List[str]):
         """Get reranker score."""
         pairs = []
         for reference in reference_results:
@@ -409,7 +412,7 @@ class ChatPDF:
         if reference_results:
             if self.rerank_model is not None:
                 # Rerank reference results
-                rerank_scores = self.get_reranker_score(query, reference_results)
+                rerank_scores = self._get_reranker_score(query, reference_results)
                 logger.debug(f"rerank_scores: {rerank_scores}")
                 # Get rerank top k chunks
                 reference_results = [reference for reference, score in sorted(
