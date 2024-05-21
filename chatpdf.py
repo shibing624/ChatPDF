@@ -271,11 +271,11 @@ class ChatPDF:
             max_new_tokens=512,
             temperature=0.7,
             repetition_penalty=1.0,
-            context_len=2048
+            context_token_len=2048
     ):
         streamer = TextIteratorStreamer(self.tokenizer, timeout=60.0, skip_prompt=True, skip_special_tokens=True)
         input_ids = self._get_chat_input()
-        max_src_len = context_len - max_new_tokens - 8
+        max_src_len = context_token_len - max_new_tokens - 8
         input_ids = input_ids[-max_src_len:]
         generation_kwargs = dict(
             input_ids=input_ids,
@@ -434,7 +434,8 @@ class ChatPDF:
             self,
             query: str,
             max_length: int = 512,
-            context_len: int = 2048,
+            context_len: int = 4096,
+            context_token_len: int = 2048,
             temperature: float = 0.7,
     ):
         """Generate predictions stream."""
@@ -457,7 +458,7 @@ class ChatPDF:
         for new_text in self.stream_generate_answer(
                 max_new_tokens=max_length,
                 temperature=temperature,
-                context_len=context_len,
+                context_token_len = context_token_len,
         ):
             if new_text != stop_str:
                 response += new_text
@@ -467,7 +468,8 @@ class ChatPDF:
             self,
             query: str,
             max_length: int = 512,
-            context_len: int = 2048,
+            context_len: int = 4096,
+            context_token_len: int = 2048,
             temperature: float = 0.7,
     ):
         """Query from corpus."""
@@ -490,7 +492,7 @@ class ChatPDF:
         for new_text in self.stream_generate_answer(
                 max_new_tokens=max_length,
                 temperature=temperature,
-                context_len=context_len,
+                context_token_len = context_token_len,
         ):
             response += new_text
         response = response.strip()
