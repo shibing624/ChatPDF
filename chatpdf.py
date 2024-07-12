@@ -123,7 +123,7 @@ class ChatPDF:
             self,
             similarity_model: SimilarityABC = None,
             generate_model_type: str = "auto",
-            generate_model_name_or_path: str = "01-ai/Yi-6B-Chat",
+            generate_model_name_or_path: str = "Qwen/Qwen2-0.5B-Instruct",
             lora_model_name_or_path: str = None,
             corpus_files: Union[str, List[str]] = None,
             save_corpus_emb_dir: str = "./corpus_embs/",
@@ -515,7 +515,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--sim_model_name", type=str, default="shibing624/text2vec-base-multilingual")
     parser.add_argument("--gen_model_type", type=str, default="auto")
-    parser.add_argument("--gen_model_name", type=str, default="01-ai/Yi-6B-Chat")
+    parser.add_argument("--gen_model_name", type=str, default="Qwen/Qwen2-0.5B-Instruct")
     parser.add_argument("--lora_model", type=str, default=None)
     parser.add_argument("--rerank_model_name", type=str, default="")
     parser.add_argument("--corpus_files", type=str, default="sample.pdf")
