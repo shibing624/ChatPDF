@@ -73,6 +73,9 @@ CUDA_VISIBLE_DEVICES=0 python webui.py --gen_model_type auto --gen_model_name 01
 - 邮件我：xuming: xuming624@qq.com
 - 微信我：加我*微信号：xuming624, 备注：姓名-公司-NLP* 进NLP交流群。
 
+<img src="https://github.com/shibing624/ChatPDF/blob/main/docs/wechat.jpeg" width="200" />
+
+<img src="https://github.com/shibing624/ChatPDF/blob/main/docs/wechat_group.jpg" width="200" />
 
 ## License
 
