@@ -8,3 +8,5 @@ python-docx
 pandas
 protobuf
 loguru
+torch
+peft
