@@ -13,8 +13,6 @@ from tqdm import tqdm
 
 from chatpdf import ChatPDF
 
-pwd_path = os.path.abspath(os.path.dirname(__file__))
-
 
 def get_truth_dict(jsonl_file_path):
     truth_dict = dict()
