@@ -403,9 +403,10 @@ class ChatPDF:
         sim_contents = self.sim_model.most_similar(query, topn=self.similarity_top_k)
         # Get reference results from corpus
         hit_chunk_dict = dict()
-        for query_id, id_score_dict in sim_contents.items():
-            for corpus_id, s in id_score_dict.items():
-                hit_chunk = self.sim_model.corpus[corpus_id]
+        for c in sim_contents:
+            for id_score_dict in c:
+                corpus_id = id_score_dict['corpus_id']
+                hit_chunk = id_score_dict["corpus_doc"]
                 reference_results.append(hit_chunk)
                 hit_chunk_dict[corpus_id] = hit_chunk
 
