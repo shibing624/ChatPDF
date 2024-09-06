@@ -22,7 +22,7 @@
   </p>
 </div>
 
-
+- 本项目实现了轻量版的GraphRAG，支持`local`模式的关系图检索的文档问答
 - 本项目支持多种开源LLM模型，包括ChatGLM3-6b、Chinese-LLaMA-Alpaca-2、Baichuan、YI等
 - 本项目支持多种文件格式，包括PDF、docx、markdown、txt等
 - 本项目优化了RAG准确率
@@ -63,7 +63,7 @@ CUDA_VISIBLE_DEVICES=0 python rag.py --gen_model_type auto --gen_model_name 01-a
 >
 >  **Please set OpenAI API key in environment: `export OPENAI_API_KEY="sk-..."`.** 
 >
-> If you don't have LLM key, check out this [graphrag._model.py](graphrag._model.py) that using `transformers` and `ollama` .
+> If you don't have LLM key, check out this [graphrag._model.py](https://github.com/shibing624/ChatPDF/blob/main/graphrag/_model.py#L120) that using `ollama` .
 
 ```shell
 python graphrag_demo.py
