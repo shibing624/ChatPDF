@@ -118,7 +118,8 @@ async def ollama_model_if_cache(
         model, prompt, system_prompt=None, history_messages=[], **kwargs
 ) -> str:
     import ollama
-    ollama_client = ollama.AsyncClient(host="http://localhost:11434")
+    ollama_host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+    ollama_client = ollama.AsyncClient(host=ollama_host)
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
