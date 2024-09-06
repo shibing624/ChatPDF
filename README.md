@@ -38,9 +38,9 @@
 
 <img src="https://github.com/shibing624/ChatPDF/blob/main/docs/chatpdf.jpg" width="860" />
 
-## 使用说明
+## Usage
 
-#### 安装依赖
+### 安装依赖
 
 在终端中输入下面的命令，然后回车即可。
 ```shell
@@ -51,14 +51,24 @@ pip install -r requirements.txt
 
 如果下载慢，建议配置豆瓣源。
 
-#### RAG示例
+### RAG示例
 
 请使用下面的命令。取决于你的系统，你可能需要用python或者python3命令。请确保你已经安装了Python。
 ```shell
-CUDA_VISIBLE_DEVICES=0 python rag.py --gen_model_type auto --gen_model_name 01-ai/Yi-6B-Chat --corpus_files sample.pdf
+CUDA_VISIBLE_DEVICES=0 python rag.py
 ```
 
-#### GraphRAG示例
+
+
+### 启动Gradio的Web服务
+
+```shell
+CUDA_VISIBLE_DEVICES=0 python webui.py --corpus_files data/sample.pdf --share
+```
+
+现在，你应该已经可以在浏览器地址栏中输入 http://localhost:7860 查看并使用 ChatPDF 了。
+
+### GraphRAG示例
 > [!TIP]
 >
 >  **Please set OpenAI API key in environment: `export OPENAI_API_KEY="sk-..."`.** 
@@ -68,15 +78,6 @@ CUDA_VISIBLE_DEVICES=0 python rag.py --gen_model_type auto --gen_model_name 01-a
 ```shell
 python graphrag_demo.py
 ```
-
-
-#### 启动Gradio的Web服务
-
-```shell
-CUDA_VISIBLE_DEVICES=0 python webui.py --gen_model_type auto --gen_model_name 01-ai/Yi-6B-Chat --corpus_files sample.pdf --share
-```
-
-现在，你应该已经可以在浏览器地址栏中输入 http://localhost:7860 查看并使用 ChatPDF 了。
 
 
 ## Contact
