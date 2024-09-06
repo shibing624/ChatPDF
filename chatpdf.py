@@ -86,13 +86,19 @@ class SentenceSplitter:
     def _split_english_text(self, text: str) -> List[str]:
         # 使用正则表达式按句子分割英文文本
         sentences = re.split(r'(?<=[.!?])\s+', text.replace('\n', ' '))
-        chunks, current_chunk = [], ''
+        chunks = []
+        current_chunk = ''
         for sentence in sentences:
-            if len(current_chunk) + len(sentence) <= self.chunk_size or not current_chunk:
+            if len(current_chunk) + len(sentence) <= self.chunk_size:
                 current_chunk += (' ' if current_chunk else '') + sentence
             else:
-                chunks.append(current_chunk)
-                current_chunk = sentence
+                if len(sentence) > self.chunk_size:
+                    for i in range(0, len(sentence), self.chunk_size):
+                        chunks.append(sentence[i:i + self.chunk_size])
+                    current_chunk = ''
+                else:
+                    chunks.append(current_chunk)
+                    current_chunk = sentence
         if current_chunk:  # Add the last chunk
             chunks.append(current_chunk)
 
