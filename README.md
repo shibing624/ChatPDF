@@ -22,7 +22,11 @@
   </p>
 </div>
 
-- 本项目实现了轻量版的GraphRAG，支持`local`模式的关系图检索的文档问答
+- 本项目实现了轻量版的GraphRAG
+  - 支持`local`模式的关系图检索的文档问答
+  - 支持Openai API, Deepseek API, Ollama API等，可自行扩展支持更多LLM
+  - 支持openai embedding、本地 text2vec embedding、huggingface embedding、sentence-transformers embedding等
+  - 异步开发，支持多个API并发请求
 - 本项目支持多种开源LLM模型，包括ChatGLM3-6b、Chinese-LLaMA-Alpaca-2、Baichuan、YI等
 - 本项目支持多种文件格式，包括PDF、docx、markdown、txt等
 - 本项目优化了RAG准确率

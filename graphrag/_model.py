@@ -1,21 +1,10 @@
 import numpy as np
 import os
 from openai import AsyncOpenAI, APIConnectionError, RateLimitError, Timeout
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_exponential,
-    retry_if_exception_type,
-)
 from ._utils import compute_args_hash, wrap_embedding_func_with_attrs
 from .base import BaseKVStorage
 
 
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=4, max=10),
-    retry=retry_if_exception_type((RateLimitError, APIConnectionError, Timeout)),
-)
 async def openai_complete_if_cache(
         model, prompt, system_prompt=None, history_messages=[], **kwargs
 ) -> str:
@@ -144,8 +133,9 @@ async def ollama_model_if_cache(
 async def ollama_model_complete(
         prompt, system_prompt=None, history_messages=[], **kwargs
 ) -> str:
+    ollama_model_name = os.getenv("OLLAMA_MODEL", "qwen2:72b")
     return await ollama_model_if_cache(
-        "qwen2:7b",
+        ollama_model_name,
         prompt,
         system_prompt=system_prompt,
         history_messages=history_messages,
@@ -154,11 +144,6 @@ async def ollama_model_complete(
 
 
 @wrap_embedding_func_with_attrs(embedding_dim=1536, max_token_size=8192)
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=4, max=10),
-    retry=retry_if_exception_type((RateLimitError, APIConnectionError, Timeout)),
-)
 async def openai_embedding(texts: list[str]) -> np.ndarray:
     openai_async_client = AsyncOpenAI()
     response = await openai_async_client.embeddings.create(
