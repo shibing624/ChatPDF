@@ -86,8 +86,5 @@ CUDA_VISIBLE_DEVICES=0 python webui.py --gen_model_type auto --gen_model_name 01
 ## Contribute
 项目代码还很粗糙，如果大家对代码有所改进，欢迎提交回本项目。
 
-## Reference
-- [imClumsyPanda/langchain-ChatGLM](https://github.com/imClumsyPanda/langchain-ChatGLM)
-
-#### 关联项目推荐
+### 关联项目推荐
 - [shibing624/MedicalGPT](https://github.com/shibing624/MedicalGPT)：训练自己的GPT大模型，实现了包括增量预训练、有监督微调、RLHF(奖励建模、强化学习训练)和DPO(直接偏好优化)
