@@ -1,4 +1,4 @@
-gradio~=3.43.2
+gradio
 transformers>=4.31.0
 similarities>=1.2.2
 sentencepiece
@@ -8,3 +8,10 @@ python-docx
 pandas
 protobuf
 loguru
+openai
+tiktoken
+networkx
+graspologic
+hnswlib
+xxhash
+tenacity

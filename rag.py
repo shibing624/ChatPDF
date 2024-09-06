@@ -124,7 +124,7 @@ class SentenceSplitter:
         return overlapped_chunks
 
 
-class ChatPDF:
+class Rag:
     def __init__(
             self,
             similarity_model: SimilarityABC = None,
@@ -504,6 +504,9 @@ class ChatPDF:
         self.history[-1][1] = response
         return response, reference_results
 
+    def query(self, query: str, **kwargs):
+        return self.predict(query, **kwargs)
+
     def save_corpus_emb(self):
         dir_name = self.get_file_hash(self.corpus_files)
         save_dir = os.path.join(self.save_corpus_emb_dir, dir_name)
@@ -525,7 +528,7 @@ if __name__ == "__main__":
     parser.add_argument("--gen_model_name", type=str, default="Qwen/Qwen2-0.5B-Instruct")
     parser.add_argument("--lora_model", type=str, default=None)
     parser.add_argument("--rerank_model_name", type=str, default="")
-    parser.add_argument("--corpus_files", type=str, default="sample.pdf")
+    parser.add_argument("--corpus_files", type=str, default="data/sample.pdf")
     parser.add_argument("--device", type=str, default=None)
     parser.add_argument("--int4", action='store_true', help="use int4 quantization")
     parser.add_argument("--int8", action='store_true', help="use int8 quantization")
@@ -535,7 +538,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
     sim_model = BertSimilarity(model_name_or_path=args.sim_model_name, device=args.device)
-    m = ChatPDF(
+    m = Rag(
         similarity_model=sim_model,
         generate_model_type=args.gen_model_type,
         generate_model_name_or_path=args.gen_model_name,

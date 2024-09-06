@@ -11,7 +11,9 @@ import time
 from similarities import BM25Similarity
 from tqdm import tqdm
 
-from chatpdf import ChatPDF
+from rag import Rag
+
+pwd_path = os.path.abspath(os.path.dirname(__file__))
 
 
 def get_truth_dict(jsonl_file_path):
@@ -31,12 +33,13 @@ def get_truth_dict(jsonl_file_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--gen_model_type", type=str, default="auto")
-    parser.add_argument("--gen_model_name", type=str, default="01-ai/Yi-6B-Chat")
+    parser.add_argument("--gen_model_name", type=str, default="Qwen/Qwen2-0.5B-Instruct")
     parser.add_argument("--lora_model", type=str, default=None)
     parser.add_argument("--rerank_model_name", type=str, default="")
     parser.add_argument("--device", type=str, default=None)
-    parser.add_argument("--corpus_files", type=str, default="medical_corpus.jsonl")
-    parser.add_argument('--query_file', default="medical_query.txt", type=str, help="query file, one query per line")
+    parser.add_argument("--corpus_files", type=str, default="data/medical_corpus.jsonl")
+    parser.add_argument('--query_file', default="data/medical_query.txt", type=str,
+                        help="query file, one query per line")
     parser.add_argument('--output_file', default='./predictions_result.jsonl', type=str)
     parser.add_argument("--int4", action='store_true', help="use int4 quantization")
     parser.add_argument("--int8", action='store_true', help="use int8 quantization")
@@ -48,7 +51,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
     sim_model = BM25Similarity()
-    model = ChatPDF(
+    model = Rag(
         similarity_model=sim_model,
         generate_model_type=args.gen_model_type,
         generate_model_name_or_path=args.gen_model_name,
