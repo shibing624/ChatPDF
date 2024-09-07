@@ -43,8 +43,7 @@ MODEL_CLASSES = {
     "auto": (AutoModelForCausalLM, AutoTokenizer),
 }
 
-PROMPT_TEMPLATE = """基于以下已知信息，简洁和专业的来回答用户的问题。
-如果无法从中得到答案，请说 "根据已知信息无法回答该问题" 或 "没有提供足够的相关信息"，不允许在答案中添加编造成分，答案请使用中文。
+PROMPT_TEMPLATE = """基于以下已知信息，简洁和专业的来回答用户的问题。用简体中文回答。
 
 已知内容:
 {context_str}
@@ -450,15 +449,15 @@ class Rag:
             self.history = []
         if self.sim_model.corpus:
             reference_results = self.get_reference_results(query)
-            if not reference_results:
-                yield '没有提供足够的相关信息', reference_results
-            reference_results = self._add_source_numbers(reference_results)
-            context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
+            if reference_results:
+                reference_results = self._add_source_numbers(reference_results)
+                context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
+            else:
+                context_str = ''
             prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
-            logger.debug(f"prompt: {prompt}")
         else:
             prompt = query
-            logger.debug(prompt)
+        logger.debug(f"prompt: {prompt}")
         self.history.append([prompt, ''])
         response = ""
         for new_text in self.stream_generate_answer(
@@ -483,15 +482,15 @@ class Rag:
             self.history = []
         if self.sim_model.corpus:
             reference_results = self.get_reference_results(query)
-
-            if not reference_results:
-                return '没有提供足够的相关信息', reference_results
-            reference_results = self._add_source_numbers(reference_results)
-            context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
+            if reference_results:
+                reference_results = self._add_source_numbers(reference_results)
+                context_str = '\n'.join(reference_results)[:(context_len - len(PROMPT_TEMPLATE))]
+            else:
+                context_str = ''
             prompt = PROMPT_TEMPLATE.format(context_str=context_str, query_str=query)
-            logger.debug(f"prompt: {prompt}")
         else:
             prompt = query
+        logger.debug(f"prompt: {prompt}")
         self.history.append([prompt, ''])
         response = ""
         for new_text in self.stream_generate_answer(
