@@ -92,8 +92,6 @@ python graphrag_demo.py
 
 <img src="https://github.com/shibing624/ChatPDF/blob/main/docs/wechat.jpeg" width="200" />
 
-<img src="https://github.com/shibing624/ChatPDF/blob/main/docs/wechat_group.jpg" width="200" />
-
 ## License
 
 
