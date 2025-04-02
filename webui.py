@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 @author:XuMing(xuming624@qq.com)
-@description:
+@description: pip install gradio==5.22.0
 """
 import argparse
-import os
 
 import gradio as gr
 from loguru import logger
 
 from rag import Rag
-
-pwd_path = os.path.abspath(os.path.dirname(__file__))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -50,44 +47,48 @@ if __name__ == '__main__':
 
     def predict_stream(message, history):
         history_format = []
-        for human, assistant in history:
-            history_format.append([human, assistant])
+        for item in history:
+            if isinstance(item, dict):
+                # OpenAI格式
+                if item["role"] == "user":
+                    if len(history_format) > 0 and len(history_format[-1]) == 1:
+                        # 上一条是用户消息但没有回复，添加回复
+                        history_format[-1].append("")
+                    history_format.append([item["content"]])
+                elif item["role"] == "assistant" and len(history_format) > 0:
+                    # 助手回复
+                    if len(history_format[-1]) == 1:
+                        history_format[-1].append(item["content"])
+                    else:
+                        # 如果上一条已经有回复，创建新条目
+                        history_format.append(["", item["content"]])
+            else:
+                # 兼容旧格式
+                history_format.append(item)
+
         model.history = history_format
+
+        # 跟踪生成的内容以便检索引用结果
+        response_text = ""
         for chunk in model.predict_stream(message):
+            response_text += chunk
             yield chunk
 
 
-    def predict(message, history):
-        logger.debug(message)
-        response, reference_results = model.predict(message)
-        r = response + "\n\n" + '\n'.join(reference_results)
-        logger.debug(r)
-        return r
-
-
-    chatbot_stream = gr.Chatbot(
-        height=600,
-        avatar_images=(
-            os.path.join(pwd_path, "assets/user.png"),
-            os.path.join(pwd_path, "assets/llama.png"),
-        ), bubble_full_width=False)
-    title = " 🎉ChatPDF WebUI🎉 "
-    description = "Link in Github: [shibing624/ChatPDF](https://github.com/shibing624/ChatPDF)"
-    css = """.toast-wrap { display: none !important } """
-    examples = ['Can you tell me about the NLP?', '介绍下NLP']
-    chat_interface_stream = gr.ChatInterface(
-        predict_stream,
-        textbox=gr.Textbox(lines=4, placeholder="Ask me question", scale=7),
-        title=title,
-        description=description,
-        chatbot=chatbot_stream,
-        css=css,
-        examples=examples,
-        theme='soft',
+    chat_interface = gr.ChatInterface(
+        fn=predict_stream,
+        title=" 🎉ChatPDF WebUI🎉 ",
+        description="Link in Github: [shibing624/ChatPDF](https://github.com/shibing624/ChatPDF)",
+        examples=['Can you tell me about the NLP?', '介绍下NLP'],
+        type="messages",
+        textbox=gr.Textbox(
+            lines=4,
+            placeholder="Ask me question",
+        ),
     )
-
-    with gr.Blocks() as demo:
-        chat_interface_stream.render()
-    demo.queue().launch(
-        server_name=args.server_name, server_port=args.server_port, share=args.share
+    chat_interface.queue()
+    chat_interface.launch(
+        server_name=args.server_name,
+        server_port=args.server_port,
+        share=args.share
     )

@@ -67,7 +67,7 @@ CUDA_VISIBLE_DEVICES=0 python rag.py
 ### 启动Gradio的Web服务
 
 ```shell
-CUDA_VISIBLE_DEVICES=0 python webui.py --corpus_files data/sample.pdf --share
+python webui.py --corpus_files data/sample.pdf --share
 ```
 
 现在，你应该已经可以在浏览器地址栏中输入 http://localhost:7860 查看并使用 ChatPDF 了。

@@ -43,7 +43,7 @@ MODEL_CLASSES = {
     "auto": (AutoModelForCausalLM, AutoTokenizer),
 }
 
-PROMPT_TEMPLATE = """基于以下已知信息，简洁和专业的来回答用户的问题。用简体中文回答。
+PROMPT_TEMPLATE = """基于以下已知信息，用专业知识回答用户的问题。用简体中文回答。
 
 已知内容:
 {context_str}
